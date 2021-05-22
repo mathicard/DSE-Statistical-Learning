@@ -12,15 +12,15 @@ With this project we want to discover whether there exist model that describe ho
 ## Here we can split the parts
 
 ### Problem Understanding
-- 
+- Margherita Maroni
 ### Data Description
 - Andrea Cutrera
 ### Data Visualization and Exploration
 - 
 ### Data Analysis
 1. Model Selection
-2. k-Nearest Neighbours
-3. Tree predictors
+2. k-Nearest Neighbours ---> Mathias Cardarello 
+3. Tree predictors ----> Andrea, Margherita
 -
 ### Theoretical background of the used methods
 -
