@@ -14,7 +14,7 @@ With this project we want to discover whether there exist model that describe ho
 ### Problem Understanding
 - 
 ### Data Description
-- 
+- Andrea Cutrera
 ### Data Visualization and Exploration
 - 
 ### Data Analysis
