@@ -18,6 +18,9 @@ With this project we want to discover whether there exist model that describe ho
 ### Data Visualization and Exploration
 - 
 ### Data Analysis
+1. Model Selection
+2. k-Nearest Neighbours
+3. Tree predictors
 -
 ### Theoretical background of the used methods
 -
