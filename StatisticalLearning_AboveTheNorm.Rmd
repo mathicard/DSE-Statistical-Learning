@@ -1,0 +1,147 @@
+---
+title: "Statistical Learning Project"
+author: "Above the norm - Bassini, Cardarello, Ciarrocchi, Cutrera, Maroni"
+date: "5/21/2021"
+abstract: "Environmental protection nowadays is a more and more important issue on which countries are investing many resources. What we are interested in is to find a way to classify a country in the United States as polluted or not based on a bunch of explanatory variables we thought could be relevant. At this point, we decided to make the data tell us the story. Is it possible to find a model with relevant variables that describe how pollution is affected? And is it possible to find a way to classify the country as a polluted or a clean one?"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+```{r include=FALSE}
+data <- read.csv('usa_final.csv', sep=',')
+data <- data[,-c(20,21)]
+log_aqi <- log(data$aqi)
+data$ln_aqi <- log_aqi
+```
+
+# Data and Problem Understanding
+
+## Problem Understanding
+- statement of the problem/goal of the analysis
+- very bried discussion of the data we have (described well in next section)
+- just announce some conclusion, and expectations of our analysis
+- list of three to five findings/keypoints (again in another section better expalined)
+
+## Data Description
+
+We started our data scraping from many sources, and we found a dependent variable to describe air quality, and many other independent variables.
+Below a table to briefly describe them.
+
+- aqi: Air Quality Index
+It measures overall air quality because it takes into account all of the criteria air pollutants measured within a geographic area. 
+We computed the average of the median value for each county of each state in 2020.
+(Source: EPA - United States Environmental Protection Agency <https://aqs.epa.gov/aqsweb/airdata/download_files.html#Annual>)
+It ranges from 0 to 200, and it has been categorized in 4 levels of pollution: 0-50 a country is defined as "Green", 51-100 a country is defined as "Yellow", 101-150 a country is defined as "Orange" and the remaining part 151-200 as "Red".  
+
+- accommodation, construction, education, finance, healthcare, information, manufacturing, mining, professional, retail, transportation, utilities, waste: Gross Domestic Product by State for the industry specified in 2020.
+It is measured in millions of current dollars.
+(Source: BEA - Bureau of Economic Analysis
+<https://apps.bea.gov/itable/iTable.cfm?ReqID=70&step=1#reqid=70&step=1&isuri=1>
+) 
+
+- mining: Value of nonfuel mineral production per square kilometer in dollars (2017). D.C. has no mineral production. (Source: USGS Minerals Yearbook 2018
+<https://prd-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/atoms/files/myb1-2017-stati-adv.xlsx>
+)
+
+- precipitations: Measured in inches, it is a measure of how much in a country has rained in a year (2020) (Source: Statista
+<https://www.statista.com/statistics/1101518/annual-precipitation-by-us-state/>
+)
+
+- lockdown: Indicates if the state had a stay-at-home order (1), an advisory or a regional measure (0.5)* or nothing (0). In the case of Wisconsin, the lockdown was declared unconstitutional after a month. (Source: Wikipedia
+<https://en.wikipedia.org/wiki/U.S._state_and_local_government_responses_to_the_COVID-19_pandemic#Initial_pandemic_responses,_including_full_lockdowns>
+)
+
+- pop_rural: It is a decennial census of the population for each state distinguishing rural from urban population.
+We considered the percentage of the rural population out of the total as a measure of being a rural state. (Source: United States Census Bureau
+<https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural/2010-urban-rural.html>
+)
+
+- n_factories: Number of manufacturing firms in each state in 2017. (Source: National Association of Manufacturers
+<https://www.nam.org/state-manufacturing-data/>
+)
+
+## Data Visualization and Exploration
+
+We start our exploration of the dependent variable, which describe the Air Quality, and 
+from a fisrt distribution plot it seems that we can reconduct it to a normal one.
+To be sure, we use the well-known Shapiro-Wilk test in order to test the null hypothesis of normality. Unfortunately it is rejected, so our variable needs to be transormed a bit.
+<br>
+<center>
+```{r message=FALSE}
+library(ggplot2)
+library(dplyr)
+dataset <- read.csv("usa_final.csv", sep=',', header = TRUE, dec = ".")
+dataset %>%
+    ggplot(aes(x=aqi)) +
+    geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8)+
+    labs(title = 'Density Plot of Air Quality Index', subtitle='Levels')
+```
+<center>
+<br>
+```{r}
+shapiro.test(dataset$aqi)
+```
+A possible way to transorm our variable could be the logarithmic scale. With the logarithm it could be seen the the skewness to the right is sharpened, and now as a matter of facts Shapiro-Wilk test is no more able to reject the normality hypothesis (p-value>0.05).
+```{r}
+dataset <- dataset %>% mutate(ln_aqi=log(dataset$aqi))
+shapiro.test(dataset$ln_aqi)
+```
+
+```{r}
+library(ggpubr)
+ggqqplot(dataset$ln_aqi, title = "QQ Plot of log AQI")
+```
+
+```{r}
+library(ggpubr)
+d1 <- dataset %>%
+  ggplot(aes(x=ln_aqi)) +
+  geom_density(fill="orangered3", color=FALSE, alpha=0.5)+
+  labs(title = 'Density Plot of Air Quality Index', subtitle='Logarithmic scale')
+d2 <- dataset %>%
+    ggplot(aes(x=aqi)) +
+    geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8)+
+    labs(title = 'Density Plot of Air Quality Index', subtitle='Levels')
+ggarrange(d1, d2, 
+          ncol = 2, nrow = 1)
+```
+
+From the boxplot we can easily visualize the distribution of the Air quality index, and especially the names of the countries (the most polluted ones) which are outliers.
+```{r}
+library(car)
+Boxplot(~aqi, data=data, id=list(labels=data$state))
+```
+
+```{r}
+library(tidyr)
+log_aqi <- log(data$aqi)
+data$ln_aqi <- log_aqi
+dt <- data %>% drop_na()
+dt <- dt[,-c(1,2)]
+```
+
+```{r}
+full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt)
+summary(full.model)
+```
+
+# Data Analysis
+
+## Model Selection
+
+## k-Nearest Neighbours
+## Tree predictors 
+
+
+# Theoretical background of the used methods (optional)
+- some mathematical formula of what we used, not so difficult
+
+# Conclusions 
+- should include the findings/keypoints
+
+# Appendix (optional)
+- containing all the R code now visualized (put option echo=TRUE in r chunk)
