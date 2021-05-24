@@ -16,12 +16,12 @@ With this project we want to discover whether there exist model that describe ho
 ### Data Description
 - Andrea Cutrera
 ### Data Visualization and Exploration
-- 
+- Mathias Cardarello 
 ### Data Analysis
-1. Model Selection
+1. Model Selection ---> Margherita
 2. k-Nearest Neighbours ---> Mathias Cardarello 
 3. Tree predictors ----> Andrea, Margherita
-4. Random Forest
+4. Random Forest ---> Andrea
 ### Theoretical background of the used methods
 - Matteo Ciarrocchi
 ### Conclusions
