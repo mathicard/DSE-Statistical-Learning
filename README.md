@@ -12,9 +12,9 @@ With this project we want to discover whether there exist model that describe ho
 ## Here we can split the parts
 
 ### Problem Understanding
-- Margherita Maroni
+- Margherita Maroni **(done)**
 ### Data Description
-- Andrea Cutrera
+- Andrea Cutrera **(done)**
 ### Data Visualization and Exploration
 - Mathias Cardarello 
 ### Data Analysis
