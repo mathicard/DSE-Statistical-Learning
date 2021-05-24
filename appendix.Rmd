@@ -1,0 +1,243 @@
+\tiny
+```
+dataset <- read.csv("usa_final.csv", sep=',', header = TRUE, dec = ".")
+```
+```
+(d1 <-  dataset %>%
+   ggplot(aes(x=aqi)) +
+   geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8))
+```
+```
+shapiro.test(dataset$aqi)
+```
+```
+dataset <- dataset %>% mutate(ln_aqi=log(dataset$aqi))
+```
+```
+shapiro.test(dataset$ln_aqi)
+```
+```
+ggqqplot(dataset$ln_aqi, title = "QQ Plot of log AQI")
+```
+```
+d2 <- dataset %>%
+  ggplot(aes(x=ln_aqi)) +
+  geom_density(fill="orangered3", color=FALSE, alpha=0.5)
+```
+```
+ggarrange(d1, d2, 
+          ncol = 2, nrow = 1)
+```
+```
+res<-cor(dataset[,-c(1,2)]) 
+round(res, 2)
+```
+```
+rcorr(as.matrix(dataset[,-1]))
+```
+```
+Boxplot(~aqi, data=dataset, id=list(labels=dataset$state))
+```
+```
+compare_means(aqi ~ lockdown,  data = dataset,
+              ref.group = ".all.", method = "t.test")
+```
+```
+ggboxplot(dataset, x = "lockdown", y = "aqi", color = "lockdown", 
+          add = "jitter", legend = "none") +
+  geom_hline(yintercept = mean(dataset$aqi), linetype = 2)+ # Add horizontal line at base mean
+  ylim(0, 200)+
+  stat_compare_means(method = "anova", label.y = 200)+        # Add global ANOVA p-value
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.", hide.ns = TRUE) 
+```
+```
+data <- read.csv('usa_final.csv', sep=',')
+data <- data[,-c(20,21)]
+```
+```
+log_aqi <- log(data$aqi)
+data$ln_aqi <- log_aqi
+dt <- dt[,-c(1,2)]
+```
+```
+full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt)
+summary(full.model)
+vif(full.model)
+sqrt(vif(full.model))>10
+sqrt(vif(full.model))>5
+```
+```
+set.seed(123)
+train = sample(1:nrow(dt), 0.7*nrow(dt))
+dt_train = dt[train,-18]
+dt_test = dt[-train,-18]
+dt_train_labels <- dt[train, 18]
+dt_test_labels <- dt[-train, 18]
+summary(dt_train_labels)
+summary(dt_test_labels)
+```
+```
+full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt[train,])
+pred_ols <- predict(full.model, dt[-train,])
+cbind(pred_ols, dt_test_labels)
+```
+```
+root_mse = rmse(dt_test_labels, pred_ols)
+R2(pred_ols, dt_test_labels)
+```
+```
+ols_plot_resid_qq(full.model)
+ols_plot_resid_fit(full.model)
+ols_plot_resid_hist(full.model)
+```
+```
+dt <- dt[,-c(13, 5, 2, 12, 9, 10, 4)]
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x))) 
+}
+dt <- as.data.frame(lapply(dt, normalize))
+```
+```
+regfit.full=regsubsets(ln_aqi~.,data=dt)
+reg.summary=summary(regfit.full)
+names(reg.summary)
+par(mfrow=c(2,2))
+plot(reg.summary$cp,xlab="Number of Variables",ylab="Cp")
+plot(reg.summary$rss,xlab="Number of Variables",ylab="RSS")
+plot(reg.summary$adjr2,xlab="Number of Variables",ylab="AdjR2")
+plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC")
+
+which.min(reg.summary$cp) #6 variables
+which.min(reg.summary$rss) #8 variables
+which.max(reg.summary$adjr2) #7 variables
+which.min(reg.summary$bic) #3 variables
+```
+```
+regfit.fwd=regsubsets(ln_aqi~.,data=dt,method="forward", nvmax=10)
+summary(regfit.fwd)
+
+reg.summary<-summary(regfit.full)
+par(mfrow=c(1,1))
+plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC",types="l")
+```
+```
+model <- lm(ln_aqi~ pop_rural + manufacturing + precipitations + n_factories, 
+            data = dt)
+summary(model)
+```
+```
+data$cl <- cut(data$aqi, breaks = c(50,100,150,200),
+               labels = c('yellow', 'orange', 'red'))
+dt <- dt[,-11]
+dt$polluted <- data$cl
+dt$polluted <- as.factor(dt$polluted)
+```
+```
+set.seed(123)
+train = sample(1:nrow(dt), 0.7*nrow(dt))
+dt_train = dt[train,-11]
+dt_test = dt[-train,-11]
+dt_train_labels <- dt[train, 11]
+dt_test_labels <- dt[-train, 11]
+```
+```
+ctrl <- trainControl(method="repeatedcv",repeats = 3)
+knnFit <- train(polluted~., data = dt, method = "knn", 
+                trControl = ctrl, preProcess = c("center","scale"), 
+                tuneLength = 20)
+
+plot(knnFit)
+knnFit$bestTune
+```
+```
+knn <- knn(train = dt_train, test = dt_test,cl = dt_train_labels, k=9)
+tab <- table(knn, dt_test_labels)
+tab
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(tab)
+```
+```
+knnFit_subset <- train(polluted ~ pop_rural + manufacturing + precipitations 
+                       + n_factories,
+                       data = dt, method = "knn", trControl = ctrl, 
+                       preProcess = c("center","scale"), tuneLength = 20)
+plot(knnFit_subset)
+knnFit_subset$bestTune
+```
+```
+knn_subset <- knn(train = dt_train[,c(9,4,7,10)], test = dt_test[,c(9,4,7,10)],
+                  cl = dt_train_labels, k=11)
+tab <- table(knn_subset, dt_test_labels)
+tab
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(tab)
+```
+```
+colVar <- factor(dt$polluted)
+
+
+scatter3D(dt$pop_rural, dt$manufacturing, dt$precipitations, 
+          colvar=as.integer(colVar),
+          phi = 0, bty ="g",
+          pch = 20, cex = 1.5,
+          col = c("#1B9E77", "#D95F02", "#FF0000"),
+          xlab = "Rural pop",
+          ylab ="Manufacturing", zlab = "Precipitations",
+          colkey = list(at = c(1, 2, 3), side = 4, 
+                        addlines = TRUE, length = 0.5, width = 0.5,
+                        labels = c("Yellow", "Orange", "Red")))
+```
+```
+tree = tree(polluted~pop_rural + manufacturing + precipitations 
+            + n_factories, dt)
+summary(tree)
+plot(tree)
+text(tree, pretty = 0)
+```
+```
+tree_train <- tree(polluted~pop_rural + manufacturing + precipitations 
+                   + n_factories, dt[train,])
+tree_pred <- predict(tree_train, dt[-train,], type = 'class')
+table(tree_pred, dt_test_labels)
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(tree_pred, dt_test_labels))
+```
+```
+tree_cv <- prune.misclass(tree_train, k = NULL, best = NULL, dt[-train,],
+                          eps = 1e-3)
+plot(tree_cv)
+```
+```
+dtt <- dt[,c(4,7,9,10,11)]
+dtt
+tree1=tree(polluted~.,dtt,subset=train)
+plot(tree1);text(tree1,pretty=0)
+cv_tree1=cv.tree(tree1,FUN=prune.misclass)
+cv_tree1
+plot(cv_tree1)
+```
+```
+tree = tree(polluted~., dt)
+summary(tree)
+plot(tree)
+text(tree, pretty = 0)
+```
+```
+tree_train <- tree(polluted~., dt[train,])
+tree_pred <- predict(tree_train, dt[-train,], type = 'class')
+table(tree_pred, dt_test_labels)
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(tree_pred, dt_test_labels))
+```
+```
+rf.tree=randomForest(polluted~.,data=dt,subset=train)
+rf.tree
+
+pred_rf <- predict(rf.tree, dt_test)
+table(pred_rf, dt_test_labels)
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(pred_rf, dt_test_labels))
+```
