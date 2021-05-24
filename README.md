@@ -23,7 +23,7 @@ With this project we want to discover whether there exist model that describe ho
 3. Tree predictors ----> Andrea, Margherita
 4. Random Forest
 ### Theoretical background of the used methods
--
+- Mathias Cardarello
 ### Conclusions
 -
 ### Appendix
