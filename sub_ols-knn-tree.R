@@ -97,6 +97,32 @@ sqrt(vif(full.model))>10
 sqrt(vif(full.model))>5
 
 ################################################################################
+#predictions
+set.seed(123)
+train = sample(1:nrow(dt), 0.7*nrow(dt))
+dt_train = dt[train,-18]
+dt_test = dt[-train,-18]
+dt_train_labels <- dt[train, 18]
+dt_test_labels <- dt[-train, 18]
+summary(dt_train_labels)
+summary(dt_test_labels)
+
+library(Metrics)
+full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt[train,])
+pred_ols <- predict(full.model, dt[-train,])
+cbind(pred_ols, dt_test_labels)
+#is the square root of the mean of the square of all of the error
+root_mse = rmse(dt_test_labels, pred_ols)
+root_mse
+library(tidyverse)
+library(caret)
+R2(pred_ols, dt_test_labels)
+library(olsrr)
+#plot of the residuals
+ols_plot_resid_qq(full.model)
+ols_plot_resid_fit(full.model)
+ols_plot_resid_hist(full.model)
+################################################################################
 
 #deleting all
 dt <- dt[,-c(13, 5, 2, 12, 9, 10, 4)]
@@ -171,7 +197,7 @@ knnFit <- train(polluted~., data = dt, method = "knn",
                 tuneLength = 20)
 
 plot(knnFit)
-knnFit$bestTune ###### 11-NN the best one
+knnFit$bestTune ###### 9-NN the best one
 
 #9-NN
 library(class)
@@ -250,7 +276,6 @@ tree1=tree(polluted~.,dtt,subset=train)
 plot(tree1);text(tree1,pretty=0)
 cv_tree1=cv.tree(tree1,FUN=prune.misclass)
 cv_tree1
-plot(cv_tree1);text(cv_tree1,pretty=0)
 plot(cv_tree1)
 
 #TREE with relevany variables
@@ -268,10 +293,18 @@ accuracy(table(tree_pred, dt_test_labels))
 
 
 
-####################
-require(randomForest)
+
+#random forest
+library(randomForest)
 rf.tree=randomForest(polluted~.,data=dt,subset=train)
 rf.tree
+
+pred_rf <- predict(rf.tree, dt_test)
+table(pred_rf, dt_test_labels)
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(pred_rf, dt_test_labels))
+
+####################
 
 oob.err=double(10)
 test.err=double(10)
@@ -284,18 +317,6 @@ for(mtry in 1:10){
 }
 
 ####################
-#random forest
-library(randomForest)
-rf.tree=randomForest(polluted~.,data=dt,subset=train)
-rf.tree
-
-pred_rf <- predict(rf.tree, dt_test)
-table(pred_rf, dt_test_labels)
-accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
-accuracy(table(pred_rf, dt_test_labels))
-
-
-
 
 oob.err=double(11)
 test.err=double(11)
@@ -307,7 +328,7 @@ for(mtry in 1:11){
   cat(mtry," ")
 }
 
-
+####################
 #lasso
 fit.lasso=glmnet(x,y)
 plot(fit.lasso,xvar="lambda",label=TRUE)
