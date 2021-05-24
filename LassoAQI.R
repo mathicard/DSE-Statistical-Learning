@@ -66,16 +66,6 @@ lasso.coef
 
 lasso.coef[lasso.coef!=0]
 
-#the first element is the intercept of aqi with the other vars.
-#Applying the Lasso, only 2 vars are selected as a subset.
-#These vars are: precipitations (which seems to have a negative dependance)
-#and the number of factories
-
-#proceeding with the multiple linear regression
-
-lm.fit=lm(aqi~precipitations+n_factories, data= usafinal)
-summary(lm.fit)
-
 #the model presents a negative relation between the levels of pm2.5 in the air
 #and the vars related to the level of precipitations, the lockdown and the population
 #living in rural areas.
