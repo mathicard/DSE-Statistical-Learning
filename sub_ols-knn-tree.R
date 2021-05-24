@@ -243,6 +243,16 @@ tree_cv <- prune.misclass(tree_train, k = NULL, best = NULL, dt[-train,],
 
 plot(tree_cv)
 
+#cv
+dtt <- dt[,c(4,7,9,10,11)]
+dtt
+tree1=tree(polluted~.,dtt,subset=train)
+plot(tree1);text(tree1,pretty=0)
+cv_tree1=cv.tree(tree1,FUN=prune.misclass)
+cv_tree1
+plot(cv_tree1);text(cv_tree1,pretty=0)
+plot(cv_tree1)
+
 #TREE with relevany variables
 tree = tree(polluted~., dt)
 summary(tree)
@@ -257,68 +267,46 @@ accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
 accuracy(table(tree_pred, dt_test_labels))
 
 
-#random forest
-library(randomForest)
+
+####################
+require(randomForest)
 rf.tree=randomForest(polluted~.,data=dt,subset=train)
 rf.tree
 
-oob.err=double(11)
-test.err=double(11)
-for(mtry in 1:11){
-  fit=randomForest(polluted~.,data=dt,subset=train,mtry=mtry,ntree=50)
-  oob.err[mtry]=fit$mse[50]
+oob.err=double(10)
+test.err=double(10)
+for(mtry in 1:10){
+  fit=randomForest(polluted~.,data=dt,subset=train,mtry=mtry,ntree=400)
+  oob.err[mtry]=fit$mse[400]
   pred=predict(fit,dt[-train,])
   test.err[mtry]=with(dt[-train,],mean((polluted-pred)^2))
   cat(mtry," ")
 }
 
+####################
+#random forest
+library(randomForest)
+rf.tree=randomForest(polluted~.,data=dt,subset=train)
+rf.tree
+
+pred_rf <- predict(rf.tree, dt_test)
+table(pred_rf, dt_test_labels)
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(pred_rf, dt_test_labels))
 
 
 
 
-###NOT WORKING
-plot(print(tree))
-tree <- tree(polluted~., dt, subset=train)
-tree_cv <- cv.tree(tree_cv, FUN = prune.misclass, K=10)
-
-
-###############################################################################
-###NOT WORKING
-#function to predict
-predict.regsubsets=function(object,newdata,id,...){
-  form=as.formula(object$call[[2]])
-  mat=model.matrix(form,newdata)
-  coefi=coef(object,id=id)
-  mat[,names(coefi)]%*%coefi
+oob.err=double(11)
+test.err=double(11)
+for(mtry in 1:11){
+  fit=randomForest(polluted~.,data=dt,subset=train,mtry=mtry,ntree=500)
+  oob.err[mtry]=fit$mse[500]
+  pred=predict(fit,dt[-train,])
+  test.err[mtry]=with(dt[-train,],mean((polluted-pred)^2))
+  cat(mtry," ")
 }
 
-set.seed(11)
-#3-fold
-folds=sample(rep(1:3,length=nrow(dt)))
-folds
-table(folds)
-cv.errors=matrix(NA,10,10)
-for(k in 1:3){
-  best.fit=regsubsets(ln_aqi~.,data=dt[folds!=k,],nvmax=10,method="forward")
-  for(i in 1:10){
-    pred=predict(best.fit,dt[folds==k,],id=i)
-    cv.errors[k,i]=mean((dt$ln_aqi[folds==k]-pred)^2)
-  }
-}
-rmse.cv=sqrt(apply(cv.errors,2,mean))
-plot(rmse.cv,type="b", ylim = c(0, 200))
-
-#lasso-ridge
-library(glmnet)
-x=model.matrix(ln_aqi~.-1,data=dt) 
-y=dt$polluted
-
-#ridge
-fit.ridge=glmnet(x,y,alpha=0)
-plot(fit.ridge,xvar="lambda",label=TRUE)
-cv.ridge=cv.glmnet(x,y,alpha=0)
-plot(cv.ridge)
-coef(cv.ridge)
 
 #lasso
 fit.lasso=glmnet(x,y)
