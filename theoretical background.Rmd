@@ -1,0 +1,49 @@
+---
+title: "Theoretical background"
+output: html_notebook
+---
+
+## Model selection
+In order to perform a *model selection*, we need to focus on the goals of a generic model: maximize the accuracy of the prediction, especially controlling the variance, and make the analysis as interpretable as possible, removing irrelavant features. To pursue these aims, we performed a subset selection, identifying the *p* predicotrs more related to the response variable and then fitting a model using least squares on the reduced set of variables. There are different models to obtain this best selection, each one with its ros and cons, and the ones we used in our analysis are presented in the following sections:
+
+-**Best subset selection**
+
+-**Forward stepwise selection**
+
+
+### Best subset selection
+The main idea of this model is that exist a best subset which we should identify.
+The model is developed through 3 steps:
+
+1. We start with the *null model* which contains no predictors and then it simply predicts the sample mean for each observation.
+2. Considering *p* predictors, for each *k = 1,.., p* we first compute all the possible models whose number is equal to the combinatorial calculus *(p over k)*. Among all the models within the same value of *k* and for each value of *k*, the one with the smallest residual sum of squares or the highest R^2 is picked. 
+3. Having computed the best model for each level of *k*, it's possible to select the best one modelling the training error (C~p, AIC, BIC, R^2) or directly computing the test error with a validation set or a cross-validation.
+
+Best subset selection checks for the best subset among all possible values of k in order to find the best subset. Nevertheless,it is a heavy method computationally speaking, especially with large values of *p*; furthermore, from a statistical point of view, this large search space could bring to end up with an overfitted model. 
+For this reasons, stepwise approaches could seem appealing alternatives.
+
+
+### Forward stepwise selection
+This method starts with an empty model and then it addes at each step the predictor that provides the greatest additional improvement, following this structure:
+
+1. We start with the *null model* which contains no predictors.
+2. Then, for *k = 1,.., p-1*, it chooses the variable among the *p - k* still available that addes the bigger improvement to the model. Again, the selection is made according to the smallest RSS or the best R^2.
+3. At the end, the best model among the *k* available is selected, according to appropriate variation of the training error (C~p, AIC, BIC, R^2) or using a validation set or cross-validation.
+
+This method presents clear computational advantages, but it's not guaranteed to find the best subset selection among all the 2^p models containing *p* predictors.
+
+### Choosing the optimal model
+Residual sum of squares and R^2 are not proper tools to select the best model, because they are related to the training error, which too often is a poor estimate of the test error and this could cause overfitting. To solve this problem there are 2 ways:
+
+- *indirectly* estimate of the test error by making adjustment on the training error to avoid overfitting.
+- *directly* estimate of the test set using a validation set or a cross-validation approach.
+
+#### Indirect estimates: C~p, AIC, BIC, Adjusted R^2
+The *Mallow's C~p* is computed as *C~p = 1/n(RSS + 2dsigma^2)* where *d* is the number of parameters and *sigma^2* an estimate of the variance of the error associated with each response measurement. The lower it is, the smaller the test error is.
+*AIC and BIC (Akaike and Bayes inofrmation criterion)* are based on the likelihhod function and these are the formulas: *AIC = -2logL + 2d* and *BIC = 1/n(RSS + log(n)dsigma^2)*, where *L* is the likelihood function. AS in Mallow, the lower values stand for smaller test errors. AIC is defined for large class of models and BIC is the most cautelative and it ends up with a smaller number of predictors respect to Mallow if *n* is large.
+*Adjusted R^2* is computed as *Adjusted R^2 = 1- (RSS/(n + d - 1))/(TSS/(n - 1))*. Unlike the previous indicators, the larger it is, the smaller the test error it is. Respect to R^2, it takes inot account penalties for the inclusion of unnecessary variables.
+
+#### Validation set and Cross-validation
+As advantage respect the indicators, they on't require an estimate of the variance *sigma^2*. 
+The validation errors are calculated by randomly selecting 3/4 of the observations as training set and th remainder as validation set. 
+Cross-validation is computed by considering *k* folders which our dataset is divided in. Then, we consider at each time *t=1,..,k* the dataset without the folder t as training set and observations in the folder t as test set. Repeating the operation *t* times, the test error will be computed by the average over the *t-test errors*.  
