@@ -2,7 +2,7 @@
 title: "Statistical Learning Project"
 author: "Above the norm - Bassini, Cardarello, Ciarrocchi, Cutrera, Maroni"
 date: "5/21/2021"
-abstract: "Environmental protection nowadays is a more and more important issue on which countries are investing many resources. What we are interested in is to find a way to classify a country in the United States as polluted or not based on a bunch of explanatory variables we thought could be relevant. At this point, we decided to make the data tell us the story. Is it possible to find a model with relevant variables that describe how pollution is affected? And is it possible to find a way to classify the country as a polluted or a clean one?"
+abstract: "Environmental protection nowadays is a more and more important issue on which countries are investing many resources. What we are interested in is to find a way to classify a country in the United States as polluted or not on a bunch of explanatory variables we thought could be relevant. Therefore, we let the data tell us how we can explain pollution in United States. In this paper we try to find out a model with relevant variables that describe what affects pollution. Moreover, we make some attempt in order to classify each single country as polluted or clean on a descrete scale. [...]"
 output:
   pdf_document: default
   html_document: default
@@ -11,6 +11,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
+
 ```{r include=FALSE}
 data <- read.csv('usa_final.csv', sep=',')
 data <- data[,-c(20,21)]
@@ -19,50 +20,106 @@ data$ln_aqi <- log_aqi
 ```
 
 # Data and Problem Understanding
+The starting point of our research question was the effect of the lockdown we experienced in 2020 on the environment. From media and social networks, we have always heard about the positive effects that the lockdowns spread all over the world had on our air quality. Then, we start considering the variable that explains the strictness of lockdown (lockdown yes = 1, lockdown no = 0, soft lockdown = 0.5) in relation with the air quality index. As you can notice from the graph below, the implementation of lockdown did not have any real effect on the air quality. Indeed, the distributions in the three boxplots are not statistically different: they have quite similar means and the distributions seem to be overlapping. 
 
-## Problem Understanding
-- statement of the problem/goal of the analysis
-- very bried discussion of the data we have (described well in next section)
-- just announce some conclusion, and expectations of our analysis
-- list of three to five findings/keypoints (again in another section better expalined)
+```{r include=FALSE}
+library(readr)
+library(dplyr)
+library(readxl)
+library(ggpubr)
+library(ggplot2)
+library(Hmisc)
+```
+
+
+```{r}
+# Visualize the expression profile
+dataset <- read.csv("usa_final.csv", sep=',', header = TRUE, dec = ".")
+dataset <- dataset %>% mutate(ln_aqi=log(dataset$aqi))
+ggboxplot(dataset, x = "lockdown", y = "aqi", color = "lockdown", 
+          add = "jitter", legend = "none") +
+  geom_hline(yintercept = mean(dataset$aqi), linetype = 2)+ # Add horizontal line at base mean
+  ylim(0, 200)+
+  stat_compare_means(method = "anova", label.y = 200)+        # Add global ANOVA p-value
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.", hide.ns = TRUE)      # Pairwise comparison against all
+
+
+# We can conclude that AQI is not significantly different between States by lockdown measures.
+```
+
+Since we got these unexpected results, we decided to go further with our analysis. 
+Therefore, from now on we would like to find the real factors that explain the difference of the air quality among US countries in 2020. 
+We started constructing our dataset scraping many sources on the web, such as Bureau of Economic Analysis, the Environmental protection agency of US, United States Census Bureau et cetera. 
+
+
+The first approach we had with our data consisted in the simple full model of linear regression (OLS). Then, we computed the variance inflation factor (vif) for each variable and we found some 'dangerous' values: according to Hair et al., 1995 the maximum acceptable level of vif is 10, whereas according to Ringle et al., 2015 the maximum acceptable level of vif is 5. 
+Starting with the approach of Hair et al. (threshold = 10), we exlcluded from our dataset the following regressors: waste and healthcare; thereafter, we performed also the vif according to Ringle et al., approach (threshold = 5) and we drop construction, utilities, professional, retail and finance from our analysis. 
+Then, we computed the OLS with the remaining variables and we looked for normality on the residuals: they are normally distributed.
+We went on performing a model selection in order to find the relevant regressors among the others.
+Given that our number of predictors (17) is not higher than the number of observations (51) we could not perform the backward stepwise model selection; then we decided to implement the forward search in order to choose the "best" predictors for our dependent variable (air quality). 
+
+For the classification task:
+- at first we decided to adopt the Nereast Neighbor algorithm (K-NN) which seemed to perform pretty well (accuracy = 81.25%);
+- then, we run the classification trees but it did not output results as good as the K-NN. Therefore, we tried to improve its performance implementing the random forest algorithm and we got an accuracy of 75% (but it is still not good as the one of K-NN)
+
+To sum up our main results we can say that there exist at least one model which describes relevant factors for distinguishing countries with good air quality from those which are more polluted. The relevant factors we found are: the share of rural population out of the total, the manufactoring contribution to GDP, the annual rainfalls and the density of the factories for each country (n° of factories / squared kilometres). 
+
 
 ## Data Description
 
 We started our data scraping from many sources, and we found a dependent variable to describe air quality, and many other independent variables.
-Below a table to briefly describe them.
+We list below the full dataset we constructed: 
 
 - aqi: Air Quality Index
-It measures overall air quality because it takes into account all of the criteria air pollutants measured within a geographic area. 
-We computed the average of the median value for each county of each state in 2020.
-(Source: EPA - United States Environmental Protection Agency <https://aqs.epa.gov/aqsweb/airdata/download_files.html#Annual>)
-It ranges from 0 to 200, and it has been categorized in 4 levels of pollution: 0-50 a country is defined as "Green", 51-100 a country is defined as "Yellow", 101-150 a country is defined as "Orange" and the remaining part 151-200 as "Red".  
+the Air Quality Index is a yardstick that runs from 0 to 500. The higher tha Air Quality Index value, the greater the level of air pollution. 
+We computed aqi as the average of the median value for each county of each state in 2020 and we found a minimum of 59.25 for Hawaii and a maximum of 197.81 for California. 
+The Air Quality Index presented six possibile discrete categories: 
 
-- accommodation, construction, education, finance, healthcare, information, manufacturing, mining, professional, retail, transportation, utilities, waste: Gross Domestic Product by State for the industry specified in 2020.
-It is measured in millions of current dollars.
-(Source: BEA - Bureau of Economic Analysis
-<https://apps.bea.gov/itable/iTable.cfm?ReqID=70&step=1#reqid=70&step=1&isuri=1>
-) 
+Green (good) = from 0 to 50 
 
-- mining: Value of nonfuel mineral production per square kilometer in dollars (2017). D.C. has no mineral production. (Source: USGS Minerals Yearbook 2018
-<https://prd-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/atoms/files/myb1-2017-stati-adv.xlsx>
-)
+Yellow (moderate) = from 51 to 100 
 
-- precipitations: Measured in inches, it is a measure of how much in a country has rained in a year (2020) (Source: Statista
-<https://www.statista.com/statistics/1101518/annual-precipitation-by-us-state/>
-)
+Orange (unhealthy for sensitive groups) = from 101 to 150 
 
-- lockdown: Indicates if the state had a stay-at-home order (1), an advisory or a regional measure (0.5)* or nothing (0). In the case of Wisconsin, the lockdown was declared unconstitutional after a month. (Source: Wikipedia
-<https://en.wikipedia.org/wiki/U.S._state_and_local_government_responses_to_the_COVID-19_pandemic#Initial_pandemic_responses,_including_full_lockdowns>
-)
+Red (unhealthy) = from 151 to 200 
 
-- pop_rural: It is a decennial census of the population for each state distinguishing rural from urban population.
-We considered the percentage of the rural population out of the total as a measure of being a rural state. (Source: United States Census Bureau
-<https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural/2010-urban-rural.html>
-)
+Purple (very unhealthy) = from 201 to 300 
 
-- n_factories: Number of manufacturing firms in each state in 2017. (Source: National Association of Manufacturers
-<https://www.nam.org/state-manufacturing-data/>
-)
+Maroon (hazardous) = 301 and higher. 
+
+From this Air Quality Index we discretize the variable called 'polluted' that categorize our countries in 3 levels of pollution: Yellow, Orange and Red. (Since we only have countries that range from 59.25 to 197.81).
+ 
+^[Source: EPA - United States Environmental Protection Agency <https://aqs.epa.gov/aqsweb/airdata/download_files.html#Annual>]
+ 
+
+- accommodation, construction, education, finance, healthcare, information, manufacturing, mining, professional, retail, transportation, utilities, waste: they are contributions to Gross Domestic Product by State for the industry specified in 2020.
+They are measured in millions of current dollars. ^[Source: BEA - Bureau of Economic Analysis
+<https://apps.bea.gov/itable/iTable.cfm?ReqID=70&step=1#reqid=70&step=1&isuri=1>]
+
+
+- mining: it represents the value of nonfuel mineral production per square kilometer in dollars (2017). 
+(The District of Columbia has no mineral production). 
+^[Source: USGS Minerals Yearbook 2018
+<https://prd-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/atoms/files/myb1-2017-stati-adv.xlsx>]
+
+
+- precipitations: it is measured in inches and it specifies how much in a country has rained in a year (2020) ^[Source: Statista
+<https://www.statista.com/statistics/1101518/annual-precipitation-by-us-state/>]
+
+
+- lockdown: it indicates if the state had a stay-at-home order (1), an advisory or a regional measure (0.5)* or nothing (0). (In the State of Wisconsin, the lockdown was declared unconstitutional after a month). ^[Source: Wikipedia
+<https://en.wikipedia.org/wiki/U.S._state_and_local_government_responses_to_the_COVID-19_pandemic#Initial_pandemic_responses,_including_full_lockdowns>]
+
+
+- pop_rural: It is a decennial census of the population for each state and it distinguishes rural from urban population.
+We considered the percentage of the rural population out of the total as a measure of being a rural state. ^[Source: United States Census Bureau
+<https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural/2010-urban-rural.html>]
+
+
+- n_factories: Number of manufacturing firms in each state in 2017 divided by the surface of each country. Therefore, it represents the density of factories in each US state. ^[Source: National Association of Manufacturers
+<https://www.nam.org/state-manufacturing-data/>]
+
 
 ## Data Visualization and Exploration
 
