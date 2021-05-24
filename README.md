@@ -27,4 +27,4 @@ With this project we want to discover whether there exist model that describe ho
 ### Conclusions
 -
 ### Appendix
--
+- Andrea
