@@ -116,6 +116,29 @@ library(car)
 Boxplot(~aqi, data=data, id=list(labels=data$state))
 ```
 
+
+```{r}
+# Visualize the expression profile
+library(readr)
+library(dplyr)
+library(readxl)
+library(ggpubr)
+library(ggplot2)
+library(Hmisc)
+dataset <- read.csv("usa_final.csv", sep=',', header = TRUE, dec = ".")
+dataset <- dataset %>% mutate(ln_aqi=log(dataset$aqi))
+ggboxplot(dataset, x = "lockdown", y = "aqi", color = "lockdown", 
+          add = "jitter", legend = "none") +
+  geom_hline(yintercept = mean(dataset$aqi), linetype = 2)+ # Add horizontal line at base mean
+  ylim(0, 200)+
+  stat_compare_means(method = "anova", label.y = 200)+        # Add global ANOVA p-value
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.", hide.ns = TRUE)      # Pairwise comparison against all
+
+
+# We can conclude that AQI is not significantly different between States by lockdown measures.
+```
+
 ```{r}
 library(tidyr)
 log_aqi <- log(data$aqi)
