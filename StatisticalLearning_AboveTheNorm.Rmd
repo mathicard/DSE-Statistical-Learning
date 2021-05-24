@@ -23,8 +23,10 @@ data$ln_aqi <- log_aqi
 The starting point of our research question was the effect of the lockdown we experienced in 2020 on the environment. From media and social networks, we have always heard about the positive effects that the lockdowns spread all over the world had on our air quality. Then, we start considering the variable that explains the strictness of lockdown (lockdown yes = 1, lockdown no = 0, soft lockdown = 0.5) in relation with the air quality index. As you can notice from the graph below, the implementation of lockdown did not have any real effect on the air quality. Indeed, the distributions in the three boxplots are not statistically different: they have quite similar means and the distributions seem to be overlapping. 
 
 ```{r include=FALSE}
+library(car)
 library(readr)
 library(dplyr)
+library(tidyr)
 library(readxl)
 library(ggpubr)
 library(ggplot2)
@@ -32,7 +34,7 @@ library(Hmisc)
 ```
 
 
-```{r}
+```{r, fig.align="center", out.width="70%"}
 # Visualize the expression profile
 dataset <- read.csv("usa_final.csv", sep=',', header = TRUE, dec = ".")
 dataset <- dataset %>% mutate(ln_aqi=log(dataset$aqi))
@@ -72,53 +74,49 @@ We started our data scraping from many sources, and we found a dependent variabl
 We list below the full dataset we constructed: 
 
 - aqi: Air Quality Index
-the Air Quality Index is a yardstick that runs from 0 to 500. The higher tha Air Quality Index value, the greater the level of air pollution. 
+the Air Quality Index is a yardstick that runs from 0 to 500. The higher tha Air Quality Index value, the greater the level of air pollution^[Source: EPA - United States Environmental Protection Agency <https://aqs.epa.gov/aqsweb/airdata/download_files.html#Annual>]. 
 We computed aqi as the average of the median value for each county of each state in 2020 and we found a minimum of 59.25 for Hawaii and a maximum of 197.81 for California. 
 The Air Quality Index presented six possibile discrete categories: 
 
-Green (good) = from 0 to 50 
+  + Green (good) = from 0 to 50 
 
-Yellow (moderate) = from 51 to 100 
+  + Yellow (moderate) = from 51 to 100 
 
-Orange (unhealthy for sensitive groups) = from 101 to 150 
+  + Orange (unhealthy for sensitive groups) = from 101 to 150 
 
-Red (unhealthy) = from 151 to 200 
+  + Red (unhealthy) = from 151 to 200 
 
-Purple (very unhealthy) = from 201 to 300 
+  + Purple (very unhealthy) = from 201 to 300 
 
-Maroon (hazardous) = 301 and higher. 
+  + Maroon (hazardous) = 301 and higher. 
 
 From this Air Quality Index we discretize the variable called 'polluted' that categorize our countries in 3 levels of pollution: Yellow, Orange and Red. (Since we only have countries that range from 59.25 to 197.81).
  
-^[Source: EPA - United States Environmental Protection Agency <https://aqs.epa.gov/aqsweb/airdata/download_files.html#Annual>]
- 
-
-- accommodation, construction, education, finance, healthcare, information, manufacturing, mining, professional, retail, transportation, utilities, waste: they are contributions to Gross Domestic Product by State for the industry specified in 2020.
-They are measured in millions of current dollars. ^[Source: BEA - Bureau of Economic Analysis
-<https://apps.bea.gov/itable/iTable.cfm?ReqID=70&step=1#reqid=70&step=1&isuri=1>]
+- accommodation, construction, education, finance, healthcare, information, manufacturing, mining, professional, retail, transportation, utilities, waste: they are contributions to Gross Domestic Product by State^[Source: BEA - Bureau of Economic Analysis
+<https://apps.bea.gov/itable/iTable.cfm?ReqID=70&step=1#reqid=70&step=1&isuri=1>] for the industry specified in 2020.
+They are measured in millions of current dollars. 
 
 
-- mining: it represents the value of nonfuel mineral production per square kilometer in dollars (2017). 
+- mining: it represents the value of nonfuel mineral production per square kilometer in dollars (2017)^[Source: USGS Minerals Yearbook 2018
+<https://prd-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/atoms/files/myb1-2017-stati-adv.xlsx>]. 
 (The District of Columbia has no mineral production). 
-^[Source: USGS Minerals Yearbook 2018
-<https://prd-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/atoms/files/myb1-2017-stati-adv.xlsx>]
 
 
-- precipitations: it is measured in inches and it specifies how much in a country has rained in a year (2020) ^[Source: Statista
-<https://www.statista.com/statistics/1101518/annual-precipitation-by-us-state/>]
+- precipitations: it is measured in inches and it specifies how much in a country has rained in a year (2020)^[Source: Statista
+<https://www.statista.com/statistics/1101518/annual-precipitation-by-us-state/>]. 
 
 
-- lockdown: it indicates if the state had a stay-at-home order (1), an advisory or a regional measure (0.5)* or nothing (0). (In the State of Wisconsin, the lockdown was declared unconstitutional after a month). ^[Source: Wikipedia
-<https://en.wikipedia.org/wiki/U.S._state_and_local_government_responses_to_the_COVID-19_pandemic#Initial_pandemic_responses,_including_full_lockdowns>]
+- lockdown: it indicates if the state had a stay-at-home order (1), an advisory or a regional measure (0.5)* or nothing (0). (In the State of Wisconsin, the lockdown was declared unconstitutional after a month)^[Source: Wikipedia
+<https://en.wikipedia.org/wiki/U.S._state_and_local_government_responses_to_the_COVID-19_pandemic#Initial_pandemic_responses,_including_full_lockdowns>]. 
 
 
-- pop_rural: It is a decennial census of the population for each state and it distinguishes rural from urban population.
-We considered the percentage of the rural population out of the total as a measure of being a rural state. ^[Source: United States Census Bureau
-<https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural/2010-urban-rural.html>]
+- pop_rural: It is a decennial census of the population for each state and it distinguishes rural from urban population^[Source: United States Census Bureau
+<https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural/2010-urban-rural.html>].
+We considered the percentage of the rural population out of the total as a measure of being a rural state. 
 
 
-- n_factories: Number of manufacturing firms in each state in 2017 divided by the surface of each country. Therefore, it represents the density of factories in each US state. ^[Source: National Association of Manufacturers
-<https://www.nam.org/state-manufacturing-data/>]
+- n_factories: Number of manufacturing firms in each state in 2017^[Source: National Association of Manufacturers
+<https://www.nam.org/state-manufacturing-data/>] divided by the surface of each country. Therefore, it represents the density of factories in each US state. 
 
 
 ## Data Visualization and Exploration
@@ -127,8 +125,8 @@ We start our exploration of the dependent variable, which describe the Air Quali
 from a fisrt distribution plot it seems that we can reconduct it to a normal one.
 To be sure, we use the well-known Shapiro-Wilk test in order to test the null hypothesis of normality. Unfortunately it is rejected, so our variable needs to be transormed a bit.
 <br>
-<center>
-```{r message=FALSE}
+
+```{r message=FALSE, out.width="50%", fig.align="center"}
 library(ggplot2)
 library(dplyr)
 dataset <- read.csv("usa_final.csv", sep=',', header = TRUE, dec = ".")
@@ -138,23 +136,22 @@ dataset %>%
     labs(title = 'Density Plot of Air Quality Index', subtitle='Levels')
 ```
 <center>
-<br>
-```{r}
+```{r, out.width="50%", fig.align="center"}
 shapiro.test(dataset$aqi)
 ```
+<center>
+
 A possible way to transorm our variable could be the logarithmic scale. With the logarithm it could be seen the the skewness to the right is sharpened, and now as a matter of facts Shapiro-Wilk test is no more able to reject the normality hypothesis (p-value>0.05).
-```{r}
+```{r, include=FALSE}
 dataset <- dataset %>% mutate(ln_aqi=log(dataset$aqi))
 shapiro.test(dataset$ln_aqi)
 ```
 
-```{r}
-library(ggpubr)
+```{r, fig.align="center", out.width="70%"}
 ggqqplot(dataset$ln_aqi, title = "QQ Plot of log AQI")
 ```
 
-```{r}
-library(ggpubr)
+```{r, out.width="80%", fig.align="center"}
 d1 <- dataset %>%
   ggplot(aes(x=ln_aqi)) +
   geom_density(fill="orangered3", color=FALSE, alpha=0.5)+
@@ -163,52 +160,29 @@ d2 <- dataset %>%
     ggplot(aes(x=aqi)) +
     geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8)+
     labs(title = 'Density Plot of Air Quality Index', subtitle='Levels')
-ggarrange(d1, d2, 
+ggarrange(d2, d1, 
           ncol = 2, nrow = 1)
 ```
 
 From the boxplot we can easily visualize the distribution of the Air quality index, and especially the names of the countries (the most polluted ones) which are outliers.
-```{r}
-library(car)
+```{r, message=FALSE, out.width="60%", fig.align="center"}
 Boxplot(~aqi, data=data, id=list(labels=data$state))
 ```
 
 
-```{r}
-# Visualize the expression profile
-library(readr)
-library(dplyr)
-library(readxl)
-library(ggpubr)
-library(ggplot2)
-library(Hmisc)
-dataset <- read.csv("usa_final.csv", sep=',', header = TRUE, dec = ".")
-dataset <- dataset %>% mutate(ln_aqi=log(dataset$aqi))
-ggboxplot(dataset, x = "lockdown", y = "aqi", color = "lockdown", 
-          add = "jitter", legend = "none") +
-  geom_hline(yintercept = mean(dataset$aqi), linetype = 2)+ # Add horizontal line at base mean
-  ylim(0, 200)+
-  stat_compare_means(method = "anova", label.y = 200)+        # Add global ANOVA p-value
-  stat_compare_means(label = "p.signif", method = "t.test",
-                     ref.group = ".all.", hide.ns = TRUE)      # Pairwise comparison against all
-
-
-# We can conclude that AQI is not significantly different between States by lockdown measures.
-```
-
-```{r}
-library(tidyr)
+```{r, include=FALSE}
 log_aqi <- log(data$aqi)
 data$ln_aqi <- log_aqi
 dt <- data %>% drop_na()
 dt <- dt[,-c(1,2)]
 ```
 
-```{r}
+\tiny
+```{r, fig.align="center", out.width="70%"}
 full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt)
 summary(full.model)
 ```
-
+\normalsize
 # Data Analysis
 
 ## Model Selection
