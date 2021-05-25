@@ -16,7 +16,7 @@ With this project we want to discover whether there exist model that describe ho
 ### Data Description
 - Andrea Cutrera **(done)**
 ### Data Visualization and Exploration
-- Mathias Cardarello 
+- Mathias Cardarello  **(done)**
 ### Data Analysis for Supervised methods
 1. Model Selection ---> Margherita
 2. k-Nearest Neighbours ---> Mathias Cardarello 
