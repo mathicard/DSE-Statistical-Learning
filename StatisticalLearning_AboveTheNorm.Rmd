@@ -2,14 +2,14 @@
 title: "Statistical Learning Project"
 author: "Above the norm - Bassini, Cardarello, Ciarrocchi, Cutrera, Maroni, Rossi"
 date: "5/21/2021"
-abstract: "Environmental protection nowadays is a more and more important issue on which countries are investing many resources. What we are interested in is to find a way to classify a country in the United States as polluted or not on a bunch of explanatory variables we thought could be relevant. Therefore, we let the data tell us how we can explain pollution in United States. In this paper we try to find out a model with relevant variables that describe what affects pollution. Moreover, we make some attempt in order to classify each single country as polluted or clean on a descrete scale. [...]"
+abstract: "Environmental protection nowadays is a more and more important issue on which countries are investing many resources. What we are interested in is to find a way to classify a country in the United States as polluted or not on a bunch of explanatory variables we thought could be relevant. Therefore, we let the data tell us how we can explain pollution in United States. In this paper we try to find out a model with relevant variables that describe what affects pollution, moreover, we make some attempt in order to classify each single country as polluted or clean on a discrete scale. [...]"
 output:
   html_document: default
   pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
 ```
 
 ```{r include=FALSE}
@@ -353,8 +353,8 @@ summary(full.model)
 
 ## Model Selection - Forward stepwise
 
-Our dataset, which is composed by 51 observations (the 51 countries of the United States of America) and 18 explanatory variables, does not need any other manipulation since we do not have any missing values. The only things we have done are: the transormation of the dependent variable (the Air Quality) with the logarithmic scale, in order to get a "more" normal distribution as explained in the previous section, and the normalization of all our variables, which will give us the rescaling with the same unit of measurements. 
-Once our dataset was ready, we had an attempt with the simplest way we know to construct a model: the Ordinary least Square. In the full model the most significative variables semm to be the number of factories (with positive sign, as expected) and precipitations (with negative sign, as expected). 
+Our dataset, which is composed by 51 observations (the 51 countries of the United States of America) and 18 explanatory variables, does not need any other manipulation since we do not have any missing values. The only things we have done are: the transormation of the dependent variable (the Air Quality) with the logarithmic scale, in order to get a "more" normal distribution as explained in the previous section, and the normalization of all our variables, which has given us the re-scaling with the same unit of measurement. 
+Once our dataset was ready, we had an attempt with the simplest way we know to construct a model: the Ordinary least Square. In the full model the most significative variables seem to be the number of factories (with positive sign, as expected) and precipitations (with negative sign, as expected). 
 
 ```{r}
 full.model <- lm(ln_aqi~., data = dt)
@@ -364,8 +364,6 @@ summary(full.model)
 But before reaching conclusions, we have to control many things in our model of regression; one of the most important is the variance inflation factor (vif) which gives us insights into the variables which can be "dangerous" to what concern multicollinearity. 
 
 ```{r}
-full.model <- lm(ln_aqi~., data = dt)
-summary(full.model)
 vif(full.model)
 sqrt(vif(full.model))>10
 ```
@@ -382,7 +380,7 @@ sqrt(vif(full.model))>5
 
 Fitting our model of regression on a random training set, we can visualize that residuals are normally distributed:
 
-```{r}
+```{r, include=FALSE}
 normalize <- function(x) {
   return ((x - min(x)) / (max(x) - min(x))) 
 }
@@ -421,7 +419,7 @@ dt <- dt[,-c(13, 5, 2, 12, 9, 10, 4)]
 normalize <- function(x) {
   return ((x - min(x)) / (max(x) - min(x))) 
 }
-dt <- as.data.frame(lapply(dt, normalize))
+#dt <- as.data.frame(lapply(dt, normalize))
 set.seed(123)
 train = sample(1:nrow(dt), 0.7*nrow(dt))
 dt_train = dt[train,-18]
@@ -457,9 +455,9 @@ At least our new model created with the forward search has a lower Mean Squared 
 
 ## k-Nearest Neighbours
 
-
 ## Tree predictors and Random Forest
 
+# Data Analysis for Unsupervised Learning
 
 # Theoretical background of the used methods (optional)
 - some mathematical formula of what we used, not so difficult
