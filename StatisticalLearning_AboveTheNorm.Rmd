@@ -31,6 +31,11 @@ library(readxl)
 library(ggpubr)
 library(ggplot2)
 library(Hmisc)
+library(olsrr)
+library(tidyverse)
+library(caret)
+library(Metrics)
+library(leaps)
 ```
 
 
@@ -344,14 +349,116 @@ full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-r
 summary(full.model)
 ```
 \normalsize
-# Data Analysis
+# Data Analysis for Supervised Learning
 
-## Model Selection
+## Model Selection - Forward stepwise
+
+Our dataset, which is composed by 51 observations (the 51 countries of the United States of America) and 18 explanatory variables, does not need any other manipulation since we do not have any missing values. The only things we have done are: the transormation of the dependent variable (the Air Quality) with the logarithmic scale, in order to get a "more" normal distribution as explained in the previous section, and the normalization of all our variables, which will give us the rescaling with the same unit of measurements. 
+Once our dataset was ready, we had an attempt with the simplest way we know to construct a model: the Ordinary least Square. In the full model the most significative variables semm to be the number of factories (with positive sign, as expected) and precipitations (with negative sign, as expected). 
+
+```{r}
+full.model <- lm(ln_aqi~., data = dt)
+summary(full.model)
+```
+
+But before reaching conclusions, we have to control many things in our model of regression; one of the most important is the variance inflation factor (vif) which gives us insights into the variables which can be "dangerous" to what concern multicollinearity. 
+
+```{r}
+full.model <- lm(ln_aqi~., data = dt)
+summary(full.model)
+vif(full.model)
+sqrt(vif(full.model))>10
+```
+
+In fact some explanatory variables have a very high variance inflation factor, and we decided to drop these ones taking as benchmark the thresholds cited in Hair et al., 1995 (in which the maximum acceptable level of vif is 10) before, and then also the more strict one according to Ringle et al., 2015 (in which it was 5). 
+After that our model of linear regression still has the number of factories and precipitations as the most statistically significatives explanatory variables, with no more any predictor with high vif.
+
+```{r}
+full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt)
+summary(full.model)
+vif(full.model)
+sqrt(vif(full.model))>5
+```
+
+Fitting our model of regression on a random training set, we can visualize that residuals are normally distributed:
+
+```{r}
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x))) 
+}
+dt <- as.data.frame(lapply(dt, normalize))
+
+set.seed(123)
+train = sample(1:nrow(dt), 0.7*nrow(dt))
+dt_train = dt[train,-18]
+dt_test = dt[-train,-18]
+dt_train_labels <- dt[train, 18]
+dt_test_labels <- dt[-train, 18]
+summary(dt_train_labels)
+summary(dt_test_labels)
+```
+
+
+```{r}
+library(Metrics)
+full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt[train,])
+ols_plot_resid_fit(full.model)
+ols_plot_resid_hist(full.model)
+```
+
+And making the predictions on our unaccessed test set, we can see the plot actual versus predicted values on the test set, to see whether they are far from being in the straight line of zero errors:
+
+```{r}
+pred_ols <- predict(full.model, dt[-train,])
+ggplot(dt_test, aes(x=pred_ols, y=dt_test_labels)) + 
+  geom_point() +
+  geom_abline(intercept=0, slope=1) +
+  labs(x='Predicted Values', y='Actual Values', title='Predicted vs. Actual Values')
+```
+
+```{r, include=FALSE}
+dt <- dt[,-c(13, 5, 2, 12, 9, 10, 4)]
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x))) 
+}
+dt <- as.data.frame(lapply(dt, normalize))
+set.seed(123)
+train = sample(1:nrow(dt), 0.7*nrow(dt))
+dt_train = dt[train,-18]
+dt_test = dt[-train,-18]
+dt_train_labels <- dt[train, 18]
+dt_test_labels <- dt[-train, 18]
+summary(dt_train_labels)
+summary(dt_test_labels)
+```
+
+With the method of the forward search which starts from the null model, and step by step adds the most relevant variable (in the bunch of the remaining ones) included in the model with the lowest Residual Sum of Squares, or highest R^2. Plotting the cross-validated prediction error (with Bayes Information Criterion - BIC) we can find the parsimonious model which is performing best, because the bic takes also into account the number of predictors which are included in our models (as a penalization term for the models with more variables). 
+
+```{r}
+regfit.fwd=regsubsets(ln_aqi~.,data=dt,method="forward", nvmax=10)
+summary(regfit.fwd)
+```
+
+```{r}
+reg.summary<-summary(regfit.fwd)
+plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC",types="l")
+```
+
+Now in our linear model made up by the 4 variables selected, the only one which becomes no more significative is the rural population indicator, but te signs are all as expected.
+
+```{r}
+model <- lm(ln_aqi~ pop_rural + manufacturing + precipitations + n_factories, 
+            data = dt)
+summary(model)
+```
+
+At least our new model created with the forward search has a lower Mean Squared Error on the prediction made on the test set. Before it was 0.1512593, now it is 0.1221634.
+
 
 ## k-Nearest Neighbours
 
 
-## Tree predictors 
+## Tree predictors and Random Forest
 
 
 # Theoretical background of the used methods (optional)
