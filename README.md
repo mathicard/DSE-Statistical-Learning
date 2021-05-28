@@ -19,7 +19,7 @@ With this project we want to discover whether there exist model that describe ho
 - Mathias Cardarello  **(done)**
 ### Data Analysis for Supervised methods
 1. Model Selection ---> vif and forward search **(done)**
-2. k-Nearest Neighbours ---> Mathias Cardarello 
+2. k-Nearest Neighbours ---> Mathias Cardarello **(done)**
 3. Tree predictors and Random Forest ----> Andrea, Margherita
 
 ### Data Analysis for Unsupervised methods
