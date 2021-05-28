@@ -668,15 +668,20 @@ In conclusion, we keep this last KNN model to predict the category at which Stat
 # Conclusions 
 
 The starting point of our research was to check if lockdowns (used as measures of containment of COVID-19) 
-had influenced the quality of air in the United States in 2020, as often stated by media. 
-After our analysis, we concluded that the AQI doesn't differ significantly in states where there has been a lockdown.
-Especially through the boxplots and the ANOVA test, we see that there is no strong relation between lockdown and the AQI,
+had influenced the quality of air in the United States in 2020, as often stated by media.
+
+We started subdivising the states according to their air quality in three categories: yellow, orange and red (from least to most polluted)  
+Proceeding with the analysis of the datasets through the boxplots and the ANOVA test, we see that there is no strong relation between lockdown and the AQI,
 which presents a mean and a standard deviation normally distributed in almost all the states, with the exception of a few ouliers.
+After this first analysis, there's evidence that the AQI doesn't differ significantly in states where there has been a lockdown.
 
 Proceeding with the OLS on the best parsimonious model selected through the BIC, we found the most relevant variables,
 which are: number of factoriesm precipitations, population in rural areas and the level of GDP in manufacture.
 The first two present the most significant statistical relation with the AQI, with a positive and negative sign respectively of course.
 Also the level of population in rural areas presents a negative sign, as expected.
+
+Finally, we computed a KNN algorithm to predict the AQI, based on all the variables and the three categories aforementioned, obtaining an 85% accuracy with only two misclassification.
+The subselection of variables most relevant to this model drops to three, the number of factories gets dropped, but the others are the same as above.
 
 The conclusion is that in the US, contrarily from a lot of statements circulated through the media,
 which suggested that lockdowns had a positive influence on the air quality, the relation between these two element is poor.
