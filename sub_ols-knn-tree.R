@@ -143,27 +143,41 @@ plot(reg.summary$rss,xlab="Number of Variables",ylab="RSS")
 plot(reg.summary$adjr2,xlab="Number of Variables",ylab="AdjR2")
 plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC")
 
-which.min(reg.summary$cp) #6 variables
-which.min(reg.summary$rss) #8 variables
-which.max(reg.summary$adjr2) #7 variables
-which.min(reg.summary$bic) #3 variables
-
 #STEPWISE FORWARD 
 #pop_rural, manufacturing, precipitations, n_factories
 regfit.fwd=regsubsets(ln_aqi~.,data=dt,method="forward", nvmax=10)
 summary(regfit.fwd)
 
-reg.summary<-summary(regfit.full)
+reg.summary<-summary(regfit.fwd)
 par(mfrow=c(1,1))
 plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC",types="l")
 
+
 #linear model of selected - Adjusted R-squared:  0.3853 
+set.seed(123)
+train = sample(1:nrow(dt), 0.7*nrow(dt))
+dt_train = dt[train,-11]
+dt_test = dt[-train,-11]
+dt_train_labels <- dt[train, 11]
+dt_test_labels <- dt[-train, 11]
+summary(dt_train_labels)
+summary(dt_test_labels)
 model <- lm(ln_aqi~ pop_rural + manufacturing + precipitations + n_factories, 
-            data = dt)
+            data = dt[train,])
 summary(model)
 
+pred_fwd <- predict(model, dt[-train,])
+cbind(pred_fwd, dt_test_labels)
+#is the square root of the mean of the square of all of the error
+root_mse = rmse(dt_test_labels, pred_fwd)
+root_mse
 ################################################################################
-#knn
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
 
 #CATEGORIZATION - CLASSIFICATION
 library(dplyr)
@@ -175,7 +189,6 @@ dt$polluted <- as.factor(dt$polluted)
 summary(dt$polluted)
 str(dt)
 
-################################################################################
 #train test split
 
 set.seed(123)
@@ -187,68 +200,23 @@ dt_test_labels <- dt[-train, 11]
 summary(dt_train_labels)
 summary(dt_test_labels)
 
-
-#K-selection
-library(caret)
-library(e1071)
-ctrl <- trainControl(method="repeatedcv",repeats = 3)
-knnFit <- train(polluted~., data = dt, method = "knn", 
-                trControl = ctrl, preProcess = c("center","scale"), 
-                tuneLength = 20)
-
-plot(knnFit)
-knnFit$bestTune ###### 9-NN the best one
-
-#9-NN
-library(class)
-knn <- knn(train = dt_train, test = dt_test,cl = dt_train_labels, k=9)
-tab <- table(knn, dt_test_labels)
-tab
-accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
-accuracy(tab)
-#81.25% ACCURACY
-
-#KNN with relevant variables
-#pop_rural, manufacturing, precipitations, n_factories
-knnFit_subset <- train(polluted ~ pop_rural + manufacturing + precipitations 
-                       + n_factories,
-                       data = dt, method = "knn", trControl = ctrl, 
-                       preProcess = c("center","scale"), tuneLength = 20)
-plot(knnFit_subset)
-knnFit_subset$bestTune #11-NN best one again
-
-knn_subset <- knn(train = dt_train[,c(9,4,7)], test = dt_test[,c(9,4,7)],
-           cl = dt_train_labels, k=11)
-tab <- table(knn_subset, dt_test_labels)
-tab
-accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
-accuracy(tab)
-#same result but less variables used (just 3)
-
-#PLOT IN 3 dimensional space
-library(plot3D)
-
-colVar <- factor(dt$polluted)
-
-
-scatter3D(dt$pop_rural, dt$manufacturing, dt$precipitations, 
-          colvar=as.integer(colVar),
-          phi = 0, bty ="g",
-          pch = 20, cex = 1.5,
-          col = c("#1B9E77", "#D95F02", "#FF0000"),
-          xlab = "Rural pop",
-          ylab ="Manufacturing", zlab = "Precipitations",
-          colkey = list(at = c(1, 2, 3), side = 4, 
-                        addlines = TRUE, length = 0.5, width = 0.5,
-                        labels = c("Yellow", "Orange", "Red")))
-library(rgl)
-plotrgl()
-
-
 ###############################################################################
 library(tree)
 library(ISLR)
 
+tree = tree(polluted~., dt)
+summary(tree)
+plot(tree)
+text(tree, pretty = 0)
+
+tree_train <- tree(polluted~., dt[train,])
+tree_pred <- predict(tree_train, dt[-train,], type = 'class')
+table(tree_pred, dt_test_labels)
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(tree_pred, dt_test_labels))
+
+#TREE with relevany variables
 tree = tree(polluted~pop_rural + manufacturing + precipitations 
             + n_factories, dt)
 summary(tree)
@@ -278,22 +246,6 @@ cv_tree1=cv.tree(tree1,FUN=prune.misclass)
 cv_tree1
 plot(cv_tree1)
 
-#TREE with relevany variables
-tree = tree(polluted~., dt)
-summary(tree)
-plot(tree)
-text(tree, pretty = 0)
-
-tree_train <- tree(polluted~., dt[train,])
-tree_pred <- predict(tree_train, dt[-train,], type = 'class')
-table(tree_pred, dt_test_labels)
-
-accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
-accuracy(table(tree_pred, dt_test_labels))
-
-
-
-
 #random forest
 library(randomForest)
 rf.tree=randomForest(polluted~.,data=dt,subset=train)
@@ -303,30 +255,6 @@ pred_rf <- predict(rf.tree, dt_test)
 table(pred_rf, dt_test_labels)
 accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
 accuracy(table(pred_rf, dt_test_labels))
-
-####################
-
-oob.err=double(10)
-test.err=double(10)
-for(mtry in 1:10){
-  fit=randomForest(polluted~.,data=dt,subset=train,mtry=mtry,ntree=400)
-  oob.err[mtry]=fit$mse[400]
-  pred=predict(fit,dt[-train,])
-  test.err[mtry]=with(dt[-train,],mean((polluted-pred)^2))
-  cat(mtry," ")
-}
-
-####################
-
-oob.err=double(11)
-test.err=double(11)
-for(mtry in 1:11){
-  fit=randomForest(polluted~.,data=dt,subset=train,mtry=mtry,ntree=500)
-  oob.err[mtry]=fit$mse[500]
-  pred=predict(fit,dt[-train,])
-  test.err[mtry]=with(dt[-train,],mean((polluted-pred)^2))
-  cat(mtry," ")
-}
 
 ####################
 #lasso
