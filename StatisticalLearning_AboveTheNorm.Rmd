@@ -666,7 +666,23 @@ In conclusion, we keep this last KNN model to predict the category at which Stat
 - some mathematical formula of what we used, not so difficult
 
 # Conclusions 
-- should include the findings/keypoints
+
+The starting point of our research was to check if lockdowns (used as measures of containment of COVID-19) 
+had influenced the quality of air in the United States in 2020, as often stated by media. 
+After our analysis, we concluded that the AQI doesn't differ significantly in states where there has been a lockdown.
+Especially through the boxplots and the ANOVA test, we see that there is no strong relation between lockdown and the AQI,
+which presents a mean and a standard deviation normally distributed in almost all the states, with the exception of a few ouliers.
+
+Proceeding with the OLS on the best parsimonious model selected through the BIC, we found the most relevant variables,
+which are: number of factoriesm precipitations, population in rural areas and the level of GDP in manufacture.
+The first two present the most significant statistical relation with the AQI, with a positive and negative sign respectively of course.
+Also the level of population in rural areas presents a negative sign, as expected.
+
+The conclusion is that in the US, contrarily from a lot of statements circulated through the media,
+which suggested that lockdowns had a positive influence on the air quality, the relation between these two element is poor.
+In fact, other indicator have much more influence on air quality, such as precipitations, people living in rural areas, 
+number of factories (many of them still operating during the pandemic, especially if related to primary goods), all of which
+couldn't be controlled by the imposition of a lockdown. 
 
 # Appendix (optional)
 - containing all the R code now visualized (put option echo=TRUE in r chunk)
