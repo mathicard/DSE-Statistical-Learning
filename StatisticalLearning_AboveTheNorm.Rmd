@@ -392,8 +392,6 @@ dt_train = dt[train,-18]
 dt_test = dt[-train,-18]
 dt_train_labels <- dt[train, 18]
 dt_test_labels <- dt[-train, 18]
-summary(dt_train_labels)
-summary(dt_test_labels)
 ```
 
 
@@ -422,12 +420,10 @@ normalize <- function(x) {
 #dt <- as.data.frame(lapply(dt, normalize))
 set.seed(123)
 train = sample(1:nrow(dt), 0.7*nrow(dt))
-dt_train = dt[train,-18]
-dt_test = dt[-train,-18]
-dt_train_labels <- dt[train, 18]
-dt_test_labels <- dt[-train, 18]
-summary(dt_train_labels)
-summary(dt_test_labels)
+dt_train = dt[train,-11]
+dt_test = dt[-train,-11]
+dt_train_labels <- dt[train, 11]
+dt_test_labels <- dt[-train, 11]
 ```
 
 With the method of the forward search which starts from the null model, and step by step adds the most relevant variable (in the bunch of the remaining ones) included in the model with the lowest Residual Sum of Squares, or highest R^2. Plotting the cross-validated prediction error (with Bayes Information Criterion - BIC) we can find the parsimonious model which is performing best, because the bic takes also into account the number of predictors which are included in our models (as a penalization term for the models with more variables). 
@@ -446,11 +442,17 @@ Now in our linear model made up by the 4 variables selected, the only one which 
 
 ```{r}
 model <- lm(ln_aqi~ pop_rural + manufacturing + precipitations + n_factories, 
-            data = dt)
+            data = dt[train,])
 summary(model)
 ```
 
-At least our new model created with the forward search has a lower Mean Squared Error on the prediction made on the test set. Before it was 0.1512593, now it is 0.1221634.
+```{r}
+pred_fwd <- predict(model, dt[-train,])
+root_mse = rmse(dt_test_labels, pred_fwd)
+root_mse
+```
+
+At least our new model created with the forward search has a lower Mean Squared Error on the prediction made on the test set. Before it was 0.1823493, now it is 0.1317688.
 
 
 ## k-Nearest Neighbours
