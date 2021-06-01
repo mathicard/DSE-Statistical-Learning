@@ -123,6 +123,39 @@ library(olsrr)
 ols_plot_resid_qq(full.model)
 ols_plot_resid_fit(full.model)
 ols_plot_resid_hist(full.model)
+
+#LASSO
+library(glmnet)
+
+x=model.matrix(ln_aqi~., dt)[,-1]
+y=dt$ln_aqi
+
+fit.lasso=glmnet(x,y)
+plot(fit.lasso,xvar="lambda",label=TRUE)
+
+cv.lasso=cv.glmnet(x,y)
+plot(cv.lasso)
+
+coef(cv.lasso)
+
+#we use our earlier train/validation division to select the lambda for the lasso.
+
+lasso.tr=glmnet(x[train,],y[train])
+lasso.tr
+
+pred=predict(lasso.tr,x[-train,])
+dim(pred)
+
+rmse= sqrt(apply((y[-train]-pred)^2,2,mean))
+plot(log(lasso.tr$lambda),rmse,type="b",xlab="Log(lambda)")
+
+lam.best=lasso.tr$lambda[order(rmse)[1]]
+lam.best
+
+coef(lasso.tr,s=lam.best)
+
+#vars with the highest relevance are manufacturing, precipitatons, pop_rural and n_factories
+
 ################################################################################
 
 #deleting all
