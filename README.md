@@ -21,9 +21,9 @@ With this project we want to discover whether there exist model that describe ho
 1. Model Selection  **(done)**
 2. Tree predictors and Random Forest  **(done)**
 3. k-Nearest Neighbours  **(done)**
-
+___
 ### Data Analysis for Unsupervised methods
-
+___
 ### Theoretical background of the used methods
 - **(done)**
 ### Conclusions
