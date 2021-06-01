@@ -290,12 +290,6 @@ table(pred_rf, dt_test_labels)
 accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
 accuracy(table(pred_rf, dt_test_labels))
 
-####################
-#lasso
-fit.lasso=glmnet(x,y)
-plot(fit.lasso,xvar="lambda",label=TRUE)
-cv.lasso=cv.glmnet(x,y)
-plot(cv.lasso)
-coef(cv.lasso)
+
 
 
