@@ -412,43 +412,6 @@ ggplot(dt_test, aes(x=pred_ols, y=dt_test_labels)) +
   labs(x='Predicted Values', y='Actual Values', title='Predicted vs. Actual Values')
 ```
 
-## Model Selection - LASSO 
-```{r}
-library(glmnet)
-
-x=model.matrix(ln_aqi~., dt)[,-1]
-y=dt$ln_aqi
-
-fit.lasso=glmnet(x,y)
-plot(fit.lasso,xvar="lambda",label=TRUE)
-
-cv.lasso=cv.glmnet(x,y)
-plot(cv.lasso)
-
-coef(cv.lasso)
-
-```
-
-we use our earlier train/validation division to select the lambda for the lasso.
-
-```{r}
-lasso.tr=glmnet(x[train,],y[train])
-lasso.tr
-
-pred=predict(lasso.tr,x[-train,])
-dim(pred)
-
-rmse= sqrt(apply((y[-train]-pred)^2,2,mean))
-plot(log(lasso.tr$lambda),rmse,type="b",xlab="Log(lambda)")
-
-lam.best=lasso.tr$lambda[order(rmse)[1]]
-lam.best
-
-coef(lasso.tr,s=lam.best)
-```
-
-Variabless with the highest relevance are manufacturing, precipitatons, pop_rural and n_factories
-
 ```{r, include=FALSE}
 dt <- dt[,-c(13, 5, 2, 12, 9, 10, 4)]
 normalize <- function(x) {
@@ -787,7 +750,94 @@ In conclusion, we keep this last KNN model to predict the category at which Stat
 # Data Analysis for Unsupervised Learning
 
 # Theoretical background of the used methods (optional)
-- some mathematical formula of what we used, not so difficult
+
+## Model selection
+
+In order to perform a *model selection*, we need to focus on the goals of a generic model: maximize the accuracy of the prediction, especially controlling the variance, and make the analysis as interpretable as possible, removing irrelavant features. To pursue these aims, we performed a subset selection, identifying the *p* predicotrs more related to the response variable and then fitting a model using least squares on the reduced set of variables. There are different models to obtain this best selection, each one with its ros and cons, and the ones we used in our analysis are presented in the following sections:
+
+-**Best subset selection**
+
+-**Forward stepwise selection**
+
+
+### Best subset selection
+
+The main idea of this model is that exist a best subset which we should identify.
+The model is developed through 3 steps:
+
+1. We start with the *null model* which contains no predictors and then it simply predicts the sample mean for each observation.
+2. Considering *p* predictors, for each *k = 1,.., p* we first compute all the possible models whose number is equal to the combinatorial calculus *(p over k)*. Among all the models within the same value of *k* and for each value of *k*, the one with the smallest residual sum of squares or the highest R^2 is picked. 
+3. Having computed the best model for each level of *k*, it's possible to select the best one modelling the training error (C~p, AIC, BIC, R^2) or directly computing the test error with a validation set or a cross-validation.
+
+Best subset selection checks for the best subset among all possible values of k in order to find the best subset. Nevertheless,it is a heavy method computationally speaking, especially with large values of *p*; furthermore, from a statistical point of view, this large search space could bring to end up with an overfitted model. 
+For this reasons, stepwise approaches could seem appealing alternatives.
+
+
+### Forward stepwise selection
+
+This method starts with an empty model and then it addes at each step the predictor that provides the greatest additional improvement, following this structure:
+
+1. we start with the *null model* which contains no predictors.
+2. then, for *k = 1,.., p-1*, it chooses the variable among the *p - k* still available that addes the bigger improvement to the model. Again, the selection is made according to the smallest RSS or the best R^2.
+3. at the end, the best model among the *k* available is selected, according to appropriate variation of the training error (C~p, AIC, BIC, R^2) or using a validation set or cross-validation.
+
+This method presents clear computational advantages, but it's not guaranteed to find the best subset selection among all the 2^p models containing *p* predictors.
+
+### Choosing the optimal model
+
+Residual sum of squares and R^2 are not proper tools to select the best model, because they are related to the training error, which too often is a poor estimate of the test error and this could cause overfitting. To solve this problem there are 2 ways:
+
+- *indirectly* estimate of the test error by making adjustment on the training error to avoid overfitting.
+- *directly* estimate of the test set using a validation set or a cross-validation approach.
+
+#### Indirect estimates: C~p, AIC, BIC, Adjusted R^2
+
+The *Mallow's C~p* is computed as *C~p = 1/n(RSS + 2dsigma^2)* where *d* is the number of parameters and *sigma^2* an estimate of the variance of the error associated with each response measurement. The lower it is, the smaller the test error is.
+*AIC and BIC (Akaike and Bayes inofrmation criterion)* are based on the likelihhod function and these are the formulas: *AIC = -2logL + 2d* and *BIC = 1/n(RSS + log(n)dsigma^2)*, where *L* is the likelihood function. AS in Mallow, the lower values stand for smaller test errors. AIC is defined for large class of models and BIC is the most cautelative and it ends up with a smaller number of predictors respect to Mallow if *n* is large.
+*Adjusted R^2* is computed as *Adjusted R^2 = 1- (RSS/(n + d - 1))/(TSS/(n - 1))*. Unlike the previous indicators, the larger it is, the smaller the test error it is. Respect to R^2, it takes inot account penalties for the inclusion of unnecessary variables.
+
+#### Validation set and Cross-validation
+
+As advantage respect the indicators, they on't require an estimate of the variance *sigma^2*. 
+The validation errors are calculated by randomly selecting 3/4 of the observations as training set and th remainder as validation set. 
+Cross-validation is computed by considering *k* folders which our dataset is divided in. Then, we consider at each time *t=1,..,k* the dataset without the folder t as training set and observations in the folder t as test set. Repeating the operation *t* times, the test error will be computed by the average over the *t-test errors*.  
+
+# Tree-based methods
+
+Used for both regression and classification problems, *tree-based methods* are so called because the set of splitting rules with which the predictor space is divided can be summarized with a tree. The prediction space is partitioned in simple regions and the method is characterized by its simplicity and interpretability, however it's usually less powerful than other approaches with regard to accuracy.
+Since it's computationally infeasible to consider every possible split of the feature space, the tree is built with a *top-down* and *greedy* approach, respectively because it begins at the top of the tree, splitting then the predictor space, and because at each step the split that adds the best possible improvement is made, without a strategy that would be careful to the future steps.
+The tree starts from the root and, passing through *internal nodes*, which represent the results of a splitting internal process, arrives to its *final nodes*, also called *leaves*, which represent the resulting split of the feature space. The latter is composed by rectangles at the end for the sake of simplicity and interpretability, but the split could have any shape.
+The aim of the split is to minimize the variance within a group and, therefore, to find boxes which minimize the residual sum of squares. For every observation that falls into the same region, the same prediction is made according to the type of problem:
+
+- *regression problem*: the predicted value is simply the mean of the response values of the training set observations; this holds for each observation which falls into the region.
+- *classification problem*: the predicted value is the most common one according to the values of the training set observations which fall in the region, according to the misclassification rate or, also better, to Gini's index or cross entropy's index.
+
+A tree without limitation in its growing could guarantee good performances on the training set, but it might probably end up with overfitting. It seems to be needed some kind of threshold to avoid this problem: *pruning the tree*.
+
+## Pruning a tree
+
+One possible solution might be to grow the tree only if the decrease in the RSS is greater than a certain threshold, but this solution is short-sighted, because it could be not the best one in a deeper perspective.
+Instead, *the pruning method* start with a very large tree and then prune it bach in order to obtain a subtree which perform better. This is done with the *cost complexity pruning*, which consider a parameter *alpha* such that, for each *alpha* value, a subtree is corresponded. *alpha* controls a trade-off between the subtree's complexity and its fit to the training data and its optimal value is chosen using cross-validation.
+In order to perform a pruning, this process is followed:
+
+1. recursive binary split is used to grow a large tree on the training set, stopping only when the minimum number of observations allowed is reached.
+2. cost complexity pruning is applied to the large tree to obtain a sequence of subtrees as a function of *alpha*.
+3. using cross validation, chhose *alpha*: for each *k = 1,.., K*, repeat steps 1 and 2 on the *(K - 1)/K* fraction of the training data, excluding the *k-th* fold and then, using this latter, evaluate the mean squared prediction error. Then an average of the results is made to take the best *alpha*, which minimize the average error.
+4. taking from step 2, the subtree with the chosen *alpha* is returned.
+
+Trees are very simple to explain to people, its interpretability is an important feature, it's common the thought that they reflect the human decision-making process and they can be displayed graphically. 
+However, they perform worse than other classification and regression approaches, even if the predictive accuracy can be substantially improved combining decision trees, as with **random forest**.
+
+## K-NN nearest neighbours selection
+
+The *k-NN nearest neighbours* algorithm belongs to that category which solves a classification problem; in fact, the response variable *Y* is defined as *qualitative* and it should be taken among a defined and finite set of possible values. This algorithm respond to a simple rule: it predicts every point with the label that is more present among the *k* neighbours of the point we are analyzing and, in case of tie, it responds to a predefined decision rule. It's relevant to focus on how it differently works depending on *k*, which takes value *k = 1,.., n* with *n* equal to the size of the training set:
+
+- *1-NN nearest neighbours* has an the best accuracy for point belonging to the training set, since each point would be predicted with its own label. Nevertheless, it provides bad performances on the test points with bad accuracy. For this reason, the case *k = 1* is characterized by *overfitting* because of the different between training and test error and this is due to the excessive variance of a model that consider for its prediction only one neighbour.
+- *K-NN* generalizes the previous particular case. The parameter *k* is usually chosen odd to avoid tie situations and if it is different from 1, in general the training error is different from 0. Moreover, as *k* grows, the classifiers generated become simpler. In particular, when *k = n* the classifier is constant and equal to the most common label in the training set. Furthermore, as *k* increases too much, the algorithm ends up with an underfitting situation. In conclusion, there isn't a best value of *k* a priori, but it is usually set a a level where the training error is different from 0.
+
+*K-NN* works with binary classification problem and with multiclass classification problem using same modality, but id could operate also in a regression problem, simply considering the prediction as the average of
+the labels of the k closest training points.
+
 
 # Conclusions 
 
@@ -814,4 +864,5 @@ number of factories (many of them still operating during the pandemic, especiall
 couldn't be controlled by the imposition of a lockdown. 
 
 # Appendix (optional)
+
 - containing all the R code now visualized (put option echo=TRUE in r chunk)
