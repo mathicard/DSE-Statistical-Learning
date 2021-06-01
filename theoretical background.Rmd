@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ## Model selection
-In order to perform a *model selection*, we need to focus on the goals of a generic model: maximize the accuracy of the prediction, especially controlling the variance, and make the analysis as interpretable as possible, removing irrelavant features. To pursue these aims, we performed a subset selection, identifying the *p* predicotrs more related to the response variable and then fitting a model using least squares on the reduced set of variables. There are different models to obtain this best selection, each one with its ros and cons, and the ones we used in our analysis are presented in the following sections:
+In order to perform a *model selection*, we need to focus on the goals of a generic model: maximize the accuracy of the prediction, especially controlling the variance, and make the analysis as interpretable as possible, removing irrelavant features. To pursue these aims, we performed a subset selection, identifying the *p* predicotrs more related to the response variable and then fitting a model using least squares on the reduced set of variables. There are different models to obtain this best selection, each one with its pros and cons, and the ones we used in our analysis are presented in the following sections:
 
 -**Best subset selection**
 
@@ -24,7 +24,7 @@ For this reasons, stepwise approaches could seem appealing alternatives.
 
 
 ### Forward stepwise selection
-This method starts with an empty model and then it addes at each step the predictor that provides the greatest additional improvement, following this structure:
+This method starts with an empty model and then it adds at each step the predictor that provides the greatest additional improvement, following this structure:
 
 1. we start with the *null model* which contains no predictors.
 2. then, for *k = 1,.., p-1*, it chooses the variable among the *p - k* still available that addes the bigger improvement to the model. Again, the selection is made according to the smallest RSS or the best R^2.
@@ -80,3 +80,8 @@ In order to perform a pruning, this process is followed:
 
 Trees are very simple to explain to people, its interpretability is an important feature, it's common the thought that they reflect the human decision-making process and they can be displayed graphically. 
 However, they perform worse than other classification and regression approaches, even if the predictive accuracy can be substantially improved combining decision trees, as with **random forest**.
+
+### Random forest
+
+Random forest is a procedure to reduce the variance of a statistical learning method, especially used with decision trees. This method faces the trade-off between accuracy and interpretability, fostering the first one. In fact, considering a given set of *n* observations each with variance *sigma^2*, the variance of their mean will be *sigma^2/n* and this will reduce the variance. The process starts with a bootstrap from the training data set, obtaining repeated samples. The bootstrapped training sets are trained with the selected method and, at the end, an average of all the prediction is made. This process is shared between *bagging* and *random forest*, but what characterizes random forest is that, when the decision trees are building, *a random selection of m predictors among the whole set of p predictors* is made, where m is usually equal to *m = sqrt(p)*, and one of the *m* selected predictors is chosen for the split, instead from *p* variables. This additional step improves the performance respect to bagging because it allows to decorrelate the trees and improve the reduction in the variance when the average among the trees is made.
+
