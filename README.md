@@ -12,21 +12,21 @@ With this project we want to discover whether there exist model that describe ho
 ## Here we can split the parts
 
 ### Problem Understanding
-- Margherita Maroni **(done)**
+- **(done)**
 ### Data Description
-- Andrea Cutrera **(done)**
+- **(done)**
 ### Data Visualization and Exploration
-- Mathias Cardarello  **(done)**
+- **(done)**
 ### Data Analysis for Supervised methods
-1. Model Selection ---> vif and forward search **(done)**
-2. k-Nearest Neighbours ---> Mathias Cardarello **(done)**
-3. Tree predictors and Random Forest ----> Andrea, Margherita
+1. Model Selection ---> **(done)**
+2. k-Nearest Neighbours ---> **(done)**
+3. Tree predictors and Random Forest ----> **(done)**
 
 ### Data Analysis for Unsupervised methods
 
 ### Theoretical background of the used methods
-- Matteo Ciarrocchi
+- **(done)**
 ### Conclusions
--
+- **(done)**
 ### Appendix
-- Andrea **(done)**
+- ---------------
