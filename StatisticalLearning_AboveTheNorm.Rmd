@@ -433,7 +433,7 @@ regfit.fwd=regsubsets(ln_aqi~.,data=dt,method="forward", nvmax=10)
 summary(regfit.fwd)
 ```
 
-```{r}
+```{r, message = FALSE}
 reg.summary<-summary(regfit.fwd)
 plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC",types="l")
 ```
@@ -454,6 +454,96 @@ root_mse
 
 At least our new model created with the forward search has a lower Mean Squared Error on the prediction made on the test set. Before it was 0.1823493, now it is 0.1317688.
 
+## Tree classifiers 
+
+After modelling, we would like to make an attempt and we try to classify our 51 countries according to the pollution of their air quality. 
+Therefore, we decided to apply the tree algorithm for classification. 
+
+We started including all the variables in our analysis since we want the tree to select the most important ones for classification. 
+In the plot below there is a graphical representation of the procedure of how the tree split the data. 
+This tree has a misclassification error rate of approximately 18%.
+
+```{r, message = FALSE}
+library(dplyr)
+data$cl <- cut(data$aqi, breaks = c(50,100,150,200),
+               labels = c('yellow', 'orange', 'red'))
+dt <- dt[,-11]
+dt$polluted <- data$cl
+dt$polluted <- as.factor(dt$polluted)
+
+#train test split
+
+set.seed(123)
+train = sample(1:nrow(dt), 0.7*nrow(dt))
+dt_train = dt[train,-11]
+dt_test = dt[-train,-11]
+dt_train_labels <- dt[train, 11]
+dt_test_labels <- dt[-train, 11]
+summary(dt_train_labels)
+summary(dt_test_labels)
+
+###############################################################################
+library(tree)
+library(ISLR)
+
+tree = tree(polluted~., dt)
+summary(tree)
+plot(tree)
+text(tree, pretty = 0)
+```
+
+We tried to do the train and the test and we got a low accuracy of 62.5%. 
+
+```{r, message = FALSE}
+tree_train <- tree(polluted~., dt[train,])
+tree_pred <- predict(tree_train, dt[-train,], type = 'class')
+table(tree_pred, dt_test_labels)
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(tree_pred, dt_test_labels))
+```
+
+We wanted to improve the performance of our classification task and we decided to reduce the dimensionality of our dataset selecting only the most relevant variables that were chosen in the model selection section.
+
+Reducing the number of variables lead us to get a slightly lower misclassification error rate of 16%. 
+Below you can find the plot of the tree. 
+```{r, message = FALSE}
+#TREE with relevany variables
+tree = tree(polluted~pop_rural + manufacturing + precipitations 
+            + n_factories, dt)
+summary(tree)
+plot(tree)
+text(tree, pretty = 0)
+```
+
+We train our algorithm and we then test since we thought we have found better results. 
+However, as you can notice we did not increase our accuracy that remains equal to 62.5%. 
+```{r, message = FALSE}
+tree_train <- tree(polluted~pop_rural + manufacturing + precipitations 
+                   + n_factories, dt[train,])
+tree_pred <- predict(tree_train, dt[-train,], type = 'class')
+table(tree_pred, dt_test_labels)
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(tree_pred, dt_test_labels))
+```
+
+We wanted to do one last attempt to improve the accuracy of our tree classifier and we applied the random forest. 
+
+```{r, message = FALSE}
+#random forest
+library(randomForest)
+rf.tree=randomForest(polluted~.,data=dt,subset=train)
+rf.tree
+
+pred_rf <- predict(rf.tree, dt_test)
+table(pred_rf, dt_test_labels)
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(pred_rf, dt_test_labels))
+```
+As you can see, the predictions on the test set output an improved accuracy of 75%. 
+
+Even though we applied the random forest and we got better results, we were not completely satisfied with the accuracy of this method of classification. Therefore, we decided to apply the K-Nearest Neighbours algorithm which will perform better and it will achieve a higher accuracy. 
 
 ## k-Nearest Neighbours
 
@@ -656,11 +746,6 @@ text3D(dt$pop_rural, dt$manufacturing, dt$precipitations,
 
 In conclusion, we keep this last KNN model to predict the category at which State belongs according to its level of air quality, by only using the GDP of Manufacturing, the Share of Rural population and the Quantity of Precipitations.
 
-
-
-
-
-## Tree predictors and Random Forest
 
 # Data Analysis for Unsupervised Learning
 
