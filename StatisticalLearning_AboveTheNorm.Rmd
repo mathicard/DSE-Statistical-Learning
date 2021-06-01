@@ -20,6 +20,7 @@ data$ln_aqi <- log_aqi
 ```
 
 # Data and Problem Understanding
+
 The starting point of our research question was the effect of the lockdown we experienced in 2020 on the environment. From media and social networks, we have always heard about the positive effects that the lockdowns spread all over the world had on our air quality. Then, we start considering the variable that explains the strictness of lockdown (lockdown yes = 1, lockdown no = 0, soft lockdown = 0.5) in relation with the air quality index. As you can notice from the graph below, the implementation of lockdown did not have any real effect on the air quality. Indeed, the distributions in the three boxplots are not statistically different: they have quite similar means and the distributions seem to be overlapping. 
 
 ```{r include=FALSE}
