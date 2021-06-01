@@ -412,6 +412,43 @@ ggplot(dt_test, aes(x=pred_ols, y=dt_test_labels)) +
   labs(x='Predicted Values', y='Actual Values', title='Predicted vs. Actual Values')
 ```
 
+LASSO 
+```{r}
+library(glmnet)
+
+x=model.matrix(ln_aqi~., dt)[,-1]
+y=dt$ln_aqi
+
+fit.lasso=glmnet(x,y)
+plot(fit.lasso,xvar="lambda",label=TRUE)
+
+cv.lasso=cv.glmnet(x,y)
+plot(cv.lasso)
+
+coef(cv.lasso)
+
+```
+
+we use our earlier train/validation division to select the lambda for the lasso.
+
+```{r}
+lasso.tr=glmnet(x[train,],y[train])
+lasso.tr
+
+pred=predict(lasso.tr,x[-train,])
+dim(pred)
+
+rmse= sqrt(apply((y[-train]-pred)^2,2,mean))
+plot(log(lasso.tr$lambda),rmse,type="b",xlab="Log(lambda)")
+
+lam.best=lasso.tr$lambda[order(rmse)[1]]
+lam.best
+
+coef(lasso.tr,s=lam.best)
+```
+
+Variabless with the highest relevance are manufacturing, precipitatons, pop_rural and n_factories
+
 ```{r, include=FALSE}
 dt <- dt[,-c(13, 5, 2, 12, 9, 10, 4)]
 normalize <- function(x) {
