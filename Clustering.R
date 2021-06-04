@@ -1,4 +1,4 @@
-dataset <- read.csv('C:/Users/Bi/Downloads/Statistical-Learning-DSE-main/Statistical-Learning-DSE-main/usa_final.csv', sep=',')
+dataset <- read.csv('usa_final.csv', sep=',')
 rownames(dataset)<-dataset[,1]
 dataset <- dataset[,2:19]
 
