@@ -32,7 +32,18 @@ h3 <- hclust(ds,method="ward.D2")
 agglo(h3)
 plot(h3, main="Ward linkage")
 
-#choice of number of clusters
+#choice of number of clusters - elbow method
+set.seed(123)
+#compute and plot wss
+wss <- sapply(1:12, 
+              function(k){kmeans(ds, k, nstart=50,iter.max = 12 )$tot.withinss})
+wss
+plot(1:12, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+
+#the plot suggests the number k of clusters
 cut_av <- cutree(h1, k = 8)
 cut_compl <- cutree(h2, k = 8)
 cut_ward <- cutree(h3, k = 8)
