@@ -23,6 +23,8 @@ With this project we want to discover whether there exist model that describe ho
 3. k-Nearest Neighbours  **(done)**
 ___
 ### Data Analysis for Unsupervised methods
+1. PCA **(done)**
+2. Clustering **(done)**
 ___
 ### Theoretical background of the used methods
 - **(done)**
