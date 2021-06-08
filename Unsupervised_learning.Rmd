@@ -1,0 +1,282 @@
+---
+title: "Unsupervised learning"
+output: html_document
+---
+
+## Unsupervised learning
+
+We enrich the analysis performing two unsupervised learning methods for classification. In particular, we use PCA and hierarchical clustering in order to visualize and understand similarities between States.
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(plot3D)
+library(dplyr)
+library(sjPlot)
+
+#load dataset
+dataset <- read.csv('usa_final.csv', sep=',')
+
+#prepare dataset for both PCA and clustering
+rownames(dataset)<-dataset[,1]
+
+
+datanames <- dataset
+datanames$cl <- cut(datanames$aqi, breaks = c(50,100,150,200),
+                   labels = c('yellow', 'orange', 'red'))
+datanames$cl <- as.factor(datanames$cl)
+
+dataset <- dataset[,2:19]
+dataset <- scale(dataset)
+
+ds<-dist(dataset)
+```
+
+### PCA
+
+PCA highlights the possibility to reduce the model to a much simple one. As our main goal is to explain the variance in the data within a small number of components, we proceed by extracting the correlation matrix from the dataset and then its eigenvalues. As the underlying table shows, there is a first principal component that explains over 64% of the variance. There are other three components deriving from an eigenvalue just above one.
+
+```{r}
+n <- nrow(dataset)
+p <- ncol(dataset)
+
+#create correlation matrix
+rho <- cor(dataset)
+
+autoval <- eigen(rho)$values
+autovec <- eigen(rho)$vectors
+
+pvarsp = autoval/p
+pvarspcum = cumsum(pvarsp)
+pvarsp
+
+tab<-round(cbind(autoval,pvarsp*100,pvarspcum*100),3)
+colnames(tab)<-c("eigenval","%var","%cumvar")
+tab
+```
+An easy way to select components is a scree plot. Since the table witnesses the presence of a first principal component followed by three other ones lying an order of magnitude below, we prefer to avoid the elbow rule and instead select every component above one. This choice allows us to end up with a model explaining 88% of the variance.
+
+```{r, fig.align="center", out.width="70%"}
+#scree diagram to select the components
+plot(autoval,type="b",main="Scree Diagram", xlab="Number of Components", ylab="Eigenvalues")
+abline(h=1,lwd=3,col="red")
+```
+As mentioned before, PCA is a powerful tool for data visualization. In this case, there is a tradeoff between visualization and reliability of the model. On one hand, the forth component has a significant explanatory importance since the eigenvalue is above 1 and it moves the cumulative variance explained from 82% to 88%. On the other hand, it is slightly above the threshold and could be neglected without a significant loss. In order to have a higher explained variance one would select a four-dimensional model, while a lower-dimensionality fashion for plotting requires to have at most three components. We decide to split the analysis into two. The first one uses four components while the other focuses on visualization and elides the last component.
+
+
+#### Four components model
+The four component analysis is the most useful one to read loadings and thus understand how variables are explained by the principal components. First of all, we select the corresponding eigenvectors.
+
+```{r}
+eigen(rho)$vectors[,1:4]
+```
+
+We proceed generating the loadings for each component. As shown in the following table, the first principal component has a heavy role in explaining almost every variable, peaking at professional, utilities and waste. Small loadings in precipitation and numbe of factories are compensated by the ones respectively of component two and four. The most information about precipitation is retained in the fourth component: this will be a loss in the subsequent three components analysis. 
+
+```{r}
+#we investigate what is explained by the components
+comp<-round(cbind(
+  -eigen(rho)$vectors[,1]*sqrt(autoval[1]),
+  -eigen(rho)$vectors[,2]*sqrt(autoval[2]),
+  -eigen(rho)$vectors[,3]*sqrt(autoval[3]),
+  -eigen(rho)$vectors[,4]*sqrt(autoval[4])
+  ),3)
+
+rownames(comp)<-colnames(dataset)
+colnames(comp)<-c("comp1","comp2","comp3","comp4")
+
+communality<-comp[,1]^2+comp[,2]^2+comp[,3]^2+comp[,4]^2
+comp<-cbind(comp,communality)
+comp
+```
+
+The scores for each State in the four components are reported below. Noteworthy, California, a very polluted State, stand out as its far from every other one.
+
+```{r}
+#calculate the scores for the selected components
+score <- dataset%*%autovec[,1:4]
+round(score,3)
+```
+
+#### Three components analysis
+Since in this analysis PCA is used for description and visualization, we focus more on the three components analyisis. We proceed in the same way as before and read the loadings.
+
+```{r}
+
+#we investigate what is explained by the components
+comp<-round(cbind(
+  -eigen(rho)$vectors[,1]*sqrt(autoval[1]),
+  -eigen(rho)$vectors[,2]*sqrt(autoval[2]),
+  -eigen(rho)$vectors[,3]*sqrt(autoval[3])
+),3)
+
+rownames(comp)<-colnames(dataset)
+
+colnames(comp)<-c("comp1","comp2","comp3")
+communality<-comp[,1]^2+comp[,2]^2+comp[,3]^2
+comp<-cbind(comp,communality)
+comp
+```
+
+We then compute the scores for each State. In this case, we can interpret them as coordinates of points in a tridimensional space and plot them.
+
+```{r}
+#calculate the scores for the selected components
+score <- dataset%*%autovec[,1:3]
+round(score,3)
+```
+
+We scale the scores and plot them.
+
+```{r, fig.align="center", out.width="70%"}
+#score plot
+scorez<-round(cbind
+              (-score[,1]/sqrt(autoval[1]),
+                score[,2]/sqrt(autoval[2]),
+                score[,3]/sqrt(autoval[3])),2)
+
+x <- scorez[,1]
+y <- scorez[,2]
+z <- scorez[,3]
+
+#plots
+scatter3D(x, y, z, colvar = dataset[,1],
+          xlab = "comp1", ylab = "comp2", zlab = "comp3",
+          main = "PCA - 3 components",
+          bty = "g", ticktype = "detailed", d = 2,
+          theta = 60, phi = 20, col = gg.col(100),
+          clab = "aqi",
+          pch = 19, cex = 0.8)
+
+text3D(x,y,z,labels = rownames(dataset),add = TRUE,
+       cex = 0.5, col = gg.col(100),
+       adj = 0.5, font = 1)
+```
+
+A further exploration of the data is possible by combining the previous plot with the initial variables loadings. Thanks to this, we can recognize similarities between States by visualizing them. 
+
+```{r, fig.align="center", out.width="70%"}
+scatter3D(x, y, z, colvar = dataset[,1],
+          xlab = "comp1", ylab = "comp2", zlab = "comp3",
+          main = "PCA - 3 components",
+          bty = "g", ticktype = "detailed", d = 2,
+          theta = 60, phi = 20, col = gg.col(100),
+          clab = "aqi",
+          pch = 19, cex = 0.8)
+
+text3D(x,y,z,labels = rownames(dataset),add = TRUE,
+       cex = 0.5, col = gg.col(100),
+       adj = 0.5, font = 1)
+
+compz<-round(cbind
+              (-comp[,1]/sqrt(autoval[1]),
+                comp[,2]/sqrt(autoval[2]),
+                comp[,3]/sqrt(autoval[3])),2)
+x <- compz[,1]
+y <- compz[,2]
+z <- compz[,3]
+
+scatter3D(x,y,z,
+          col = "red",add = TRUE,
+          pch = 19, cex = 0.8)
+
+text3D(x,y,z,labels = row.names(comp),add = TRUE,
+       cex = 0.5, col = "red",
+       adj = 0.5, font = 1)
+```
+
+### Clustering
+
+The main goal of clustering in this analysis is on one hand subdivide States in groups that share common features. On the other hand, it results useful also to discover peculiar States which tend to have marked different behaviours. This could be the hint for a further analysis. To add robustness to the analysis, we perform and compare different clustering methods. In particular, we compare the average linkage, the complete linkage and the Ward linkage methods by plotting the respective dendrogram.
+
+```{r, fig.align="center", out.width="70%"}
+agglo <- function(hc){
+  data.frame(row.names=paste0("Cluster",seq_along(hc$height)),
+             height=hc$height,
+             compoments=ifelse(hc$merge<0,
+        hc$labels[abs(hc$merge)], paste0("Cluster",hc$merge))
+  )}
+
+#first clustering: average linkage
+h1 <- hclust(ds,method="average")
+
+par(mfrow=c(1,3)) 
+
+plot(h1, main="Average linkage")
+
+#add robustness to the analysis trying other methods
+h2 <- hclust(ds,method="complete")
+
+plot(h2, main="Complete linkage")
+
+#Ward method can help us in reducing distances of outliers such as California
+h3 <- hclust(ds,method="ward.D2")
+
+plot(h3, main="Ward linkage")
+```
+
+The results are pretty similar, with Texas, New York and especially California disjoint from the main tree almost to the root. The result is consistent with the PCA, that already highlighted California as a strong outlier. We choose to go on with Ward method for to reasons. First of all, it is in its implementation to reduce the distances of the outliers, as we can clearly confirm comparing it to the average link method. Secondly, it is the one that subdivides the States in the clearer way. We can see by sight a three clusters dendrogram. To confirm it, we test it with the elbow method. The method relies on the fact that one looks for a number of clusters (k) that minimizes the total within-cluster sum of squares (wss). We plot the curve of wss according to k and locate the bending point (or elbow), a good indicator to decide k.
+
+```{r, fig.align="center", out.width="70%"}
+#choice of number of clusters - elbow method
+set.seed(123)
+#compute and plot wss
+wss <- sapply(1:12, 
+              function(k){kmeans(ds, k, nstart=50,iter.max = 12 )$tot.withinss})
+wss
+plot(1:12, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+
+The test confirms the presence of three main clusters.
+
+```{r, fig.align="center", out.width="70%"}
+plot(h3, main="Clusters with Ward linkage method")
+rect.hclust(h3,3)
+```
+
+Worth mentioning, we have to be aware that Ward method is different from the other two, that share the exact same clusters except from one State. The quick comparison below shows that Ward method leads to a more balanced subdivision between clusters.
+
+```{r}
+cut_av <- cutree(h1, k = 3)
+cut_compl <- cutree(h2, k = 3)
+cut_ward <- cutree(h3, k = 3)
+
+#compare the different clustering methods
+table(cut_av,cut_compl)
+table(cut_av,cut_ward)
+table(cut_compl,cut_ward)
+```
+
+#### Comparison
+We question now if the clusters resemble the level of pollution for the States. Being the dataset subdivided into three clusters like the qualitative labels for the level of pollution ("red", "orange" and "yellow") we can easily group them to see if they have similar results.
+
+```{r, fig.align="center", out.width="70%"}
+# Lets compare the share of polluted groups within each of the 3 clusters 
+cut_ward <- as.data.frame(cut_ward)
+cut_ward <- cbind(rownames(cut_ward), cut_ward)
+names(cut_ward) <- c("state","cluster")
+cut_ward <- merge(cut_ward, datanames[,c(1,22)], by = "state")
+
+group_by(cut_ward, cluster, cl) %>% 
+  summarise(
+    count = n(),
+    share = n()/51*100
+  )
+
+tab_xtab(cut_ward$cluster, cut_ward$cl, show.row.prc = TRUE)
+```
+
+The table shows no correlation between the labels and the clusters. The correlation test below has a non-significative p-value of 0.708.
+
+```{r}
+#Correlation tests
+cut_ward$cl2 <- as.numeric(cut_ward$cl)
+
+cor(cut_ward$cluster, cut_ward$cl2, method = "pearson")
+cor.test(cut_ward$cluster, cut_ward$cl2, method = "pearson")
+```
