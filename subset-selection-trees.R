@@ -128,9 +128,10 @@ ols_plot_resid_hist(full.model)
 library(glmnet)
 
 x=model.matrix(ln_aqi~., dt)[,-1]
+x = scale(x, TRUE, TRUE)
 y=dt$ln_aqi
 
-fit.lasso=glmnet(x,y)
+fit.lasso=glmnet(x,y, standardize = FALSE)
 plot(fit.lasso,xvar="lambda",label=TRUE)
 
 cv.lasso=cv.glmnet(x,y)
@@ -140,7 +141,7 @@ coef(cv.lasso)
 
 #we use our earlier train/validation division to select the lambda for the lasso.
 
-lasso.tr=glmnet(x[train,],y[train])
+lasso.tr=glmnet(x[train,],y[train], standardize = FALSE)
 lasso.tr
 
 pred=predict(lasso.tr,x[-train,])
@@ -152,9 +153,28 @@ plot(log(lasso.tr$lambda),rmse,type="b",xlab="Log(lambda)")
 lam.best=lasso.tr$lambda[order(rmse)[1]]
 lam.best
 
+#the best lambda is smaller than rsme in the linear regression model
+
 coef(lasso.tr,s=lam.best)
 
-#vars with the highest relevance are manufacturing, precipitatons, pop_rural and n_factories
+#vars with the highest relevance are precipitatons, pop_rural and n_factories
+#it also adds information in the sub-selection. Manufacture and lockdown have less relevance
+
+#now comute post-lasso inference to check the highest dependent variables on the sub-selection
+
+library(selectiveInference)
+
+sigma = estimateSigma(x,y)$sigmahat
+
+beta = coef(lasso.tr, x=x, y=y, s=lam.best/51, exact = TRUE)[-1]
+
+out_lasso_inf = fixedLassoInf(x,y,beta,lam.best,sigma=sigma)
+out_lasso_inf
+
+#with a lambda of 0,026 the most relevant variables that satisfy the p-value are precipitations and
+#n_factories. pop_rural, manufacture and lockdown show a high p-value and are taken out.
+#with the Lasso, the results are similar to the other models used, but the post-selection inference
+#reduces the variables just to the two aforementioned.
 
 ################################################################################
 
