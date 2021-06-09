@@ -403,6 +403,66 @@ ggplot(dt_test, aes(x=pred_ols, y=dt_test_labels)) +
   geom_abline(intercept=0, slope=1) +
   labs(x='Predicted Values', y='Actual Values', title='Predicted vs. Actual Values')
 ```
+#LASSO
+
+```{r}
+library(glmnet)
+
+x=model.matrix(ln_aqi~., dt)[,-1]
+x = scale(x, TRUE, TRUE)
+y=dt$ln_aqi
+
+fit.lasso=glmnet(x,y, standardize = FALSE)
+plot(fit.lasso,xvar="lambda",label=TRUE)
+
+cv.lasso=cv.glmnet(x,y)
+plot(cv.lasso)
+
+coef(cv.lasso)
+
+```
+
+We use our earlier train/validation division to select the lambda for the lasso.
+
+```{r}
+lasso.tr=glmnet(x[train,],y[train], standardize = FALSE)
+lasso.tr
+
+pred=predict(lasso.tr,x[-train,])
+dim(pred)
+
+rmse= sqrt(apply((y[-train]-pred)^2,2,mean))
+plot(log(lasso.tr$lambda),rmse,type="b",xlab="Log(lambda)")
+
+lam.best=lasso.tr$lambda[order(rmse)[1]]
+lam.best
+```
+The best lambda is smaller than rsme in the linear regression model
+
+```{r}
+coef(lasso.tr,s=lam.best)
+```
+Variables with the highest relevance are precipitatons, pop_rural and n_factories
+It also adds information in the sub-selection. Manufacture and lockdown have less relevance
+
+Now compute post-lasso inference to check the highest dependent variables on the sub-selection
+
+```{r}
+library(selectiveInference)
+
+sigma = estimateSigma(x,y)$sigmahat
+
+beta = coef(lasso.tr, x=x, y=y, s=lam.best/51, exact = TRUE)[-1]
+
+out_lasso_inf = fixedLassoInf(x,y,beta,lam.best,sigma=sigma)
+out_lasso_inf
+```
+
+With a lambda of 0,026 the most relevant variables that satisfy the p-value are precipitations and
+n_factories. pop_rural, manufacture and lockdown show a high p-value and are taken out.
+With the Lasso, the results are similar to the other models used, but the post-selection inference
+reduces the variables just to the two aforementioned.
+
 
 ```{r, include=FALSE}
 dt <- dt[,-c(13, 5, 2, 12, 9, 10, 4)]
