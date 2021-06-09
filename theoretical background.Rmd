@@ -100,3 +100,29 @@ The representation can be done in two dimensions: for this reason, it's relevant
 Principal components are also used to get portion of the total variance present in a dataset and this is the rule used to select the best number of principal components. The idea is to add them to the dataset as new variables until the next one improves significantly the explained variance of our observations. A general rule is based on the use of the singular values associated with each component, which recommends to add components until they have values greater than a threshold, usually 1, because it would mean they are able to explain the spread of the data as much as more than one variable of the original dataset.
 
 ## Clustering
+
+The aim of the clustering is different respect to PCA: here, we want to detect if subgroups or clusters are present in the dataset, seeking a data partition such that observations within the same group are *similar*. The concept of similarity becomes central with clustering and it depends on type of variables, which need to be numeric, and on the type of distance we are considering (usually Euclidean, but there are a lot of types: City-Block, Minkowski,..).
+The algorithms can be several, but there is a main difference between two groups:
+- **K-means**, where the number of clusters is pre-specified
+- **hierarchical clustering**, where the number of clusters id not fixed and we end up with a tree-like visual representation, called *dendogram*.
+
+Our analysis is focused on hierarchical clustering and its different algorithms based on different assumptions.
+
+### Hierachial clustering
+
+This method follow a simple process:
+1. it starts with all observations grouped by themselves as clusters.
+2. The closest two clusters are identified and merged.
+3. The process is repeated until all the points are in the same cluster.
+
+As defined before, the grouping process depends on the kind of distance we are using, but also on the way we want to link the point. 
+With regard to the distance-type problem, if the euclidean one is used, we need to standardize the variables previously. Respect to the linkage, there are different **linkage types** with which an algorithm can be developed:
+
+- **complete linkage**, it maximizes inter-cluster dissimilarities, computing all pairwise dissimilarities between observations of different clusters and it records the largest one.
+- **average linkage**, computing the mean of the inter-cluster dissimilarities.
+- **single linkage**, where the minimal inter-cluster dissimilarity is considered,recording the smallest among all the pairwise dissimilarities between observations of different groups.
+- **centroid linkage**, where dissimilarity between centroids of cluster A and cluster B is considered.
+There isn't a univoque best method to determine the best number of cluster. 
+
+
+
