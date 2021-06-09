@@ -2005,7 +2005,7 @@ cut_ward$cl2 <- as.numeric(cut_ward$cl)
 cor(cut_ward$cluster, cut_ward$cl2, method = "pearson")
 cor.test(cut_ward$cluster, cut_ward$cl2, method = "pearson") 
 # There is no relationship between both indexes (cluster and pollution category)
-
+```
 
 
 
