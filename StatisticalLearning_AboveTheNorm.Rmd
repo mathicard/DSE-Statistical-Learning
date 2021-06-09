@@ -2,10 +2,19 @@
 title: "Statistical Learning Project"
 author: "Above the norm - Bassini, Cardarello, Ciarrocchi, Cutrera, Maroni, Rossi"
 date: "5/21/2021"
-abstract: "Environmental protection nowadays is a more and more important issue on which countries are investing many resources. What we are interested in is to find a way to classify a country in the United States as polluted or not on a bunch of explanatory variables we thought could be relevant. Therefore, we let the data tell us how we can explain pollution in United States. In this paper we try to find out a model with relevant variables that describe what affects pollution, moreover, we make some attempt in order to classify each single country as polluted or clean on a discrete scale. [...]"
 output:
-  html_document: default
-  pdf_document: default
+  html_document:
+    df_print: paged
+  pdf_document:
+    latex_engine: xelatex
+abstract: Environmental protection nowadays is a more and more important issue on
+  which countries are investing many resources. What we are interested in is to find
+  a way to classify a country in the United States as polluted or not on a bunch of
+  explanatory variables we thought could be relevant. Therefore, we let the data tell
+  us how we can explain pollution in United States. In this paper we try to find out
+  a model with relevant variables that describe what affects pollution, moreover,
+  we make some attempt in order to classify each single country as polluted or clean
+  on a discrete scale. [...]
 ---
 
 ```{r setup, include=FALSE}
@@ -805,9 +814,6 @@ In conclusion, we keep this last KNN model to predict the category at which Stat
 
 We enrich the analysis performing two unsupervised learning methods for classification. In particular, we use PCA and hierarchical clustering in order to visualize and understand similarities between States.
 
-```{r setup, include=FALSE, echo=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 ```{r include=FALSE}
 library(plot3D)
@@ -1135,6 +1141,43 @@ The *k-NN nearest neighbours* algorithm belongs to that category which solves a 
 *K-NN* works with binary classification problem and with multiclass classification problem using same modality, but id could operate also in a regression problem, simply considering the prediction as the average of
 the labels of the k closest training points.
 
+# Unsupervised learning
+
+In the unsupervised learning only independent variables are observed and there is no interest in prediction because there isn't a response variable.Here, The goals are to find interesting ways to visualize data and to discover subgroups among the variables and observations. We discussed two methods during the analysis:
+- **principal component analysis (PCA)**
+- **clustering**
+
+## Principal Component Analysis
+
+Used for data visualization or data pre-processing, the PCA is a technique which gives us a low dimensional representation of the dataset, exploiting covariance matrix of the starting dataset. The aim is to find a sequence of combination of variables that have maximal variance and are uncorrelated. For this reason, the process id developed sequentially.
+First, it's needed to find the *first principal component* of a set of features: this is that normalized linear combination of features which has the largest variance, where the sum of squared coefficients is equal to 1 and the set of the coefficients is called the *principal component loading vector*. Then, the first principal component is computed starting from this vector, using singular value decomposition and with the aim to get as much variance as possible. In other words, we want to identify the direction among the feature space where the data vary the most and that is more relevant to explain how data are spread in the our space. The PCA is useful for visualization because we can project data along this dimension to understand a good part of data distribution.
+The representation can be done in two dimensions: for this reason, it's relevant do determine the *second principal component*. This is that linear combination of features that has the largest variance and, at the same time, is uncorrelated with the first principal component. Given this last assumption, second component turns out to lay on the orthognal direction of the first component and this is a great feature to visualize the data in a two dimensional space. Principal components can be more than two but not more the number of observations minus one or number of features and all of them need to be orthogonal to the previous component. 
+Principal components are also used to get portion of the total variance present in a dataset and this is the rule used to select the best number of principal components. The idea is to add them to the dataset as new variables until the next one improves significantly the explained variance of our observations. A general rule is based on the use of the singular values associated with each component, which recommends to add components until they have values greater than a threshold, usually 1, because it would mean they are able to explain the spread of the data as much as more than one variable of the original dataset.
+
+## Clustering
+
+The aim of the clustering is different respect to PCA: here, we want to detect if subgroups or clusters are present in the dataset, seeking a data partition such that observations within the same group are *similar*. The concept of similarity becomes central with clustering and it depends on type of variables, which need to be numeric, and on the type of distance we are considering (usually Euclidean, but there are a lot of types: City-Block, Minkowski,..).
+The algorithms can be several, but there is a main difference between two groups:
+- **K-means**, where the number of clusters is pre-specified
+- **hierarchical clustering**, where the number of clusters id not fixed and we end up with a tree-like visual representation, called *dendogram*.
+
+Our analysis is focused on hierarchical clustering and its different algorithms based on different assumptions.
+
+### Hierachial clustering
+
+This method follow a simple process:
+1. it starts with all observations grouped by themselves as clusters.
+2. The closest two clusters are identified and merged.
+3. The process is repeated until all the points are in the same cluster.
+
+As defined before, the grouping process depends on the kind of distance we are using, but also on the way we want to link the point. 
+With regard to the distance-type problem, if the euclidean one is used, we need to standardize the variables previously. Respect to the linkage, there are different **linkage types** with which an algorithm can be developed:
+
+- **complete linkage**, it maximizes inter-cluster dissimilarities, computing all pairwise dissimilarities between observations of different clusters and it records the largest one.
+- **average linkage**, computing the mean of the inter-cluster dissimilarities.
+- **single linkage**, where the minimal inter-cluster dissimilarity is considered,recording the smallest among all the pairwise dissimilarities between observations of different groups.
+- **centroid linkage**, where dissimilarity between centroids of cluster A and cluster B is considered.
+There isn't a univoque best method to determine the best number of cluster.
 
 # Conclusions 
 
@@ -1165,11 +1208,11 @@ In fact, other indicator have much more influence on air quality, such as precip
 number of factories (many of them still operating during the pandemic, especially if related to primary goods), all of which
 couldn't be controlled by the imposition of a lockdown. According to all the model selected, the lockdown doesn't seem to have had a relevant impact on air quality. 
 
-# Appendix (optional)
+# Appendix
 
-- containing all the R code now visualized (put option echo=TRUE in r chunk)
+All the pieces of code not evaluated for all the parts of our analysis.
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, include=TRUE, echo=TRUE}
 
 ################################################################################
 
