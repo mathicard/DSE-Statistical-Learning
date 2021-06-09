@@ -2,6 +2,7 @@
 title: "Theoretical background"
 output: html_notebook
 ---
+# Supervised learning
 
 ## Model selection
 In order to perform a *model selection*, we need to focus on the goals of a generic model: maximize the accuracy of the prediction, especially controlling the variance, and make the analysis as interpretable as possible, removing irrelavant features. To pursue these aims, we performed a subset selection, identifying the *p* predicotrs more related to the response variable and then fitting a model using least squares on the reduced set of variables. There are different models to obtain this best selection, each one with its pros and cons, and the ones we used in our analysis are presented in the following sections:
@@ -84,4 +85,16 @@ However, they perform worse than other classification and regression approaches,
 ### Random forest
 
 Random forest is a procedure to reduce the variance of a statistical learning method, especially used with decision trees. This method faces the trade-off between accuracy and interpretability, fostering the first one. In fact, considering a given set of *n* observations each with variance *sigma^2*, the variance of their mean will be *sigma^2/n* and this will reduce the variance. The process starts with a bootstrap from the training data set, obtaining repeated samples. The bootstrapped training sets are trained with the selected method and, at the end, an average of all the prediction is made. This process is shared between *bagging* and *random forest*, but what characterizes random forest is that, when the decision trees are building, *a random selection of m predictors among the whole set of p predictors* is made, where m is usually equal to *m = sqrt(p)*, and one of the *m* selected predictors is chosen for the split, instead from *p* variables. This additional step improves the performance respect to bagging because it allows to decorrelate the trees and improve the reduction in the variance when the average among the trees is made.
+
+# Unsupervised learning
+
+In the unsupervised learning only independent variables are observed and there is no interest in prediction because there isn't a response variable.Here, The goals are to find interesting ways to visualize data and to discover subgroups among the variables and observations. We discussed two methods during the analysis:
+- **principal component analysis (PCA)**
+- **clustering**
+
+## Principal Component Analysis
+
+Used for data visualization or data pre-processing, the PCA is a technique which gives us a low dimensional representation of the dataset, exploiting covariance matrix of the starting dataset. The aim is to find a sequence of combination of variables that have maximal variance and are uncorrelated. For this reason, the process id developed sequentially. First, it's needed to find the *first principal component* of a set of features: this is that normalized linear combination of features which has the largest variance, where the sum of squared coefficients is equal to 1 and the set of the coefficients is called the *principal component loading vector*. Then, the first principal component is computed starting from this vector, using singular value decomposition and with the aim to get as much variance as possible. In other words, we want to identify the direction among the feature space where the data vary the most and that is more relevant to explain how data are spread in the our space. The PCA is useful for visualization because we can project data along this dimension to understand a good part of data distribution. The representation can be done in two dimensions: for this reason, it's relevant do determine the *second principal component*. This is that linear combination of features that has the largest variance and, at the same time, is uncorrelated with the first principal component. Given this last assumption, second component turns out to lay on the orthognal direction of the first component and this is a great feature to visualize the data in a two dimensional space. Principal components can be more than two but not more the number of observations minus one or number of features and all of them need to be orthogonal to the previous component. 
+Principal components are also used to get portion of the total variance present in a dataset and this is the rule used to select the best number of principal components. The idea is to add them to the dataset as new variables until the next one improves significantly the explained variance of our observations. A general rule is based on the use of the singular values associated with each component, which recommends to add components until they have values greater than a threshold, usually 1, because it would mean they are able to explain the spread of the data as much as more than one variable of the original dataset.
+
 
