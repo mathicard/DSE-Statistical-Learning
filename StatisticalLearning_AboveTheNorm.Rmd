@@ -812,7 +812,7 @@ In conclusion, we keep this last KNN model to predict the category at which Stat
 
 ## Unsupervised learning
 
-We enrich the analysis performing two unsupervised learning methods for classification. In particular, we use PCA and hierarchical clustering in order to visualize and understand similarities between States.
+We enrich the analysis performing two unsupervised learning methods. In particular, we use PCA and hierarchical clustering in order to visualize and understand similarities between States.
 
 
 ```{r include=FALSE}
