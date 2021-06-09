@@ -403,8 +403,8 @@ ggplot(dt_test, aes(x=pred_ols, y=dt_test_labels)) +
   geom_abline(intercept=0, slope=1) +
   labs(x='Predicted Values', y='Actual Values', title='Predicted vs. Actual Values')
 ```
-#LASSO
 
+## Model Selection - LASSO
 ```{r}
 library(glmnet)
 
