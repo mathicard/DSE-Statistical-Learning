@@ -122,7 +122,16 @@ With regard to the distance-type problem, if the euclidean one is used, we need 
 - **average linkage**, computing the mean of the inter-cluster dissimilarities.
 - **single linkage**, where the minimal inter-cluster dissimilarity is considered,recording the smallest among all the pairwise dissimilarities between observations of different groups.
 - **centroid linkage**, where dissimilarity between centroids of cluster A and cluster B is considered.
-There isn't a univoque best method to determine the best number of cluster. 
+
+At the same time, there is a ig variety of dissimilarities' measures which we can use, depending on the type of data, ordinal or numeric. Here are reported a few examples:
+- **Gower index**, which takes value for the each quantitative variable equal to *1 - |x(is) - x(js)|/K(s)*  where *|x(is) - x(js)| is the difference between the values of two observations respect to the variable and K(s) is the range within the variable value can vary.* In the case of qualitative variables, the Gower index takes value 1 if two observations have same mode for each feature, otherwise 0. In case of only binary variables, this index is equal to *Jaccard index*.
+- **Jaccard index**, for qualitative variables, it excludes the co-absence of the features.
+- **Russel Rao index**, equal to the ratio between number of co-presence and the number of binary variables.
+- **Sochal-Mikener index**, equal to the ratio between the sum of co-absence and co-presence and total number of binary variables.
+
+In general, there isn't a univoque best method to determine the best number of cluster. It's possible to use multiple methods to detect potential clusters and a good way to work is to repeat the analysis with appropriate different dissimilarities index and linkage types to check the robustness of the results. 
+
+
 
 
 
