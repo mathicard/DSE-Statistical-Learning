@@ -1052,11 +1052,12 @@ cor(cut_ward$cluster, cut_ward$cl2, method = "pearson")
 cor.test(cut_ward$cluster, cut_ward$cl2, method = "pearson")
 ```
 
-# Theoretical background of the used methods (optional)
+# Theoretical Background 
 
-## Model selection
+## Supervised learning
 
-In order to perform a *model selection*, we need to focus on the goals of a generic model: maximize the accuracy of the prediction, especially controlling the variance, and make the analysis as interpretable as possible, removing irrelavant features. To pursue these aims, we performed a subset selection, identifying the *p* predicotrs more related to the response variable and then fitting a model using least squares on the reduced set of variables. There are different models to obtain this best selection, each one with its ros and cons, and the ones we used in our analysis are presented in the following sections:
+### Model selection
+In order to perform a *model selection*, we need to focus on the goals of a generic model: maximize the accuracy of the prediction, especially controlling the variance, and make the analysis as interpretable as possible, removing irrelavant features. To pursue these aims, we performed a subset selection, identifying the *p* predicotrs more related to the response variable and then fitting a model using least squares on the reduced set of variables. There are different models to obtain this best selection, each one with its pros and cons, and the ones we used in our analysis are presented in the following sections:
 
 -**Best subset selection**
 
@@ -1064,7 +1065,6 @@ In order to perform a *model selection*, we need to focus on the goals of a gene
 
 
 ### Best subset selection
-
 The main idea of this model is that exist a best subset which we should identify.
 The model is developed through 3 steps:
 
@@ -1077,8 +1077,7 @@ For this reasons, stepwise approaches could seem appealing alternatives.
 
 
 ### Forward stepwise selection
-
-This method starts with an empty model and then it addes at each step the predictor that provides the greatest additional improvement, following this structure:
+This method starts with an empty model and then it adds at each step the predictor that provides the greatest additional improvement, following this structure:
 
 1. we start with the *null model* which contains no predictors.
 2. then, for *k = 1,.., p-1*, it chooses the variable among the *p - k* still available that addes the bigger improvement to the model. Again, the selection is made according to the smallest RSS or the best R^2.
@@ -1087,26 +1086,22 @@ This method starts with an empty model and then it addes at each step the predic
 This method presents clear computational advantages, but it's not guaranteed to find the best subset selection among all the 2^p models containing *p* predictors.
 
 ### Choosing the optimal model
-
 Residual sum of squares and R^2 are not proper tools to select the best model, because they are related to the training error, which too often is a poor estimate of the test error and this could cause overfitting. To solve this problem there are 2 ways:
 
 - *indirectly* estimate of the test error by making adjustment on the training error to avoid overfitting.
 - *directly* estimate of the test set using a validation set or a cross-validation approach.
 
 #### Indirect estimates: C~p, AIC, BIC, Adjusted R^2
-
 The *Mallow's C~p* is computed as *C~p = 1/n(RSS + 2dsigma^2)* where *d* is the number of parameters and *sigma^2* an estimate of the variance of the error associated with each response measurement. The lower it is, the smaller the test error is.
 *AIC and BIC (Akaike and Bayes inofrmation criterion)* are based on the likelihhod function and these are the formulas: *AIC = -2logL + 2d* and *BIC = 1/n(RSS + log(n)dsigma^2)*, where *L* is the likelihood function. AS in Mallow, the lower values stand for smaller test errors. AIC is defined for large class of models and BIC is the most cautelative and it ends up with a smaller number of predictors respect to Mallow if *n* is large.
 *Adjusted R^2* is computed as *Adjusted R^2 = 1- (RSS/(n + d - 1))/(TSS/(n - 1))*. Unlike the previous indicators, the larger it is, the smaller the test error it is. Respect to R^2, it takes inot account penalties for the inclusion of unnecessary variables.
 
 #### Validation set and Cross-validation
-
 As advantage respect the indicators, they on't require an estimate of the variance *sigma^2*. 
 The validation errors are calculated by randomly selecting 3/4 of the observations as training set and th remainder as validation set. 
 Cross-validation is computed by considering *k* folders which our dataset is divided in. Then, we consider at each time *t=1,..,k* the dataset without the folder t as training set and observations in the folder t as test set. Repeating the operation *t* times, the test error will be computed by the average over the *t-test errors*.  
 
-# Tree-based methods
-
+### Tree-based methods
 Used for both regression and classification problems, *tree-based methods* are so called because the set of splitting rules with which the predictor space is divided can be summarized with a tree. The prediction space is partitioned in simple regions and the method is characterized by its simplicity and interpretability, however it's usually less powerful than other approaches with regard to accuracy.
 Since it's computationally infeasible to consider every possible split of the feature space, the tree is built with a *top-down* and *greedy* approach, respectively because it begins at the top of the tree, splitting then the predictor space, and because at each step the split that adds the best possible improvement is made, without a strategy that would be careful to the future steps.
 The tree starts from the root and, passing through *internal nodes*, which represent the results of a splitting internal process, arrives to its *final nodes*, also called *leaves*, which represent the resulting split of the feature space. The latter is composed by rectangles at the end for the sake of simplicity and interpretability, but the split could have any shape.
@@ -1117,8 +1112,7 @@ The aim of the split is to minimize the variance within a group and, therefore, 
 
 A tree without limitation in its growing could guarantee good performances on the training set, but it might probably end up with overfitting. It seems to be needed some kind of threshold to avoid this problem: *pruning the tree*.
 
-## Pruning a tree
-
+### Pruning a tree
 One possible solution might be to grow the tree only if the decrease in the RSS is greater than a certain threshold, but this solution is short-sighted, because it could be not the best one in a deeper perspective.
 Instead, *the pruning method* start with a very large tree and then prune it bach in order to obtain a subtree which perform better. This is done with the *cost complexity pruning*, which consider a parameter *alpha* such that, for each *alpha* value, a subtree is corresponded. *alpha* controls a trade-off between the subtree's complexity and its fit to the training data and its optimal value is chosen using cross-validation.
 In order to perform a pruning, this process is followed:
@@ -1131,8 +1125,11 @@ In order to perform a pruning, this process is followed:
 Trees are very simple to explain to people, its interpretability is an important feature, it's common the thought that they reflect the human decision-making process and they can be displayed graphically. 
 However, they perform worse than other classification and regression approaches, even if the predictive accuracy can be substantially improved combining decision trees, as with **random forest**.
 
-## K-NN nearest neighbours selection
+### Random forest
 
+Random forest is a procedure to reduce the variance of a statistical learning method, especially used with decision trees. This method faces the trade-off between accuracy and interpretability, fostering the first one. In fact, considering a given set of *n* observations each with variance *sigma^2*, the variance of their mean will be *sigma^2/n* and this will reduce the variance. The process starts with a bootstrap from the training data set, obtaining repeated samples. The bootstrapped training sets are trained with the selected method and, at the end, an average of all the prediction is made. This process is shared between *bagging* and *random forest*, but what characterizes random forest is that, when the decision trees are building, *a random selection of m predictors among the whole set of p predictors* is made, where m is usually equal to *m = sqrt(p)*, and one of the *m* selected predictors is chosen for the split, instead from *p* variables. This additional step improves the performance respect to bagging because it allows to decorrelate the trees and improve the reduction in the variance when the average among the trees is made.
+
+### K-NN nearest neighbours selection
 The *k-NN nearest neighbours* algorithm belongs to that category which solves a classification problem; in fact, the response variable *Y* is defined as *qualitative* and it should be taken among a defined and finite set of possible values. This algorithm respond to a simple rule: it predicts every point with the label that is more present among the *k* neighbours of the point we are analyzing and, in case of tie, it responds to a predefined decision rule. It's relevant to focus on how it differently works depending on *k*, which takes value *k = 1,.., n* with *n* equal to the size of the training set:
 
 - *1-NN nearest neighbours* has an the best accuracy for point belonging to the training set, since each point would be predicted with its own label. Nevertheless, it provides bad performances on the test points with bad accuracy. For this reason, the case *k = 1* is characterized by *overfitting* because of the different between training and test error and this is due to the excessive variance of a model that consider for its prediction only one neighbour.
@@ -1141,20 +1138,20 @@ The *k-NN nearest neighbours* algorithm belongs to that category which solves a 
 *K-NN* works with binary classification problem and with multiclass classification problem using same modality, but id could operate also in a regression problem, simply considering the prediction as the average of
 the labels of the k closest training points.
 
-# Unsupervised learning
+## Unsupervised learning
 
 In the unsupervised learning only independent variables are observed and there is no interest in prediction because there isn't a response variable.Here, The goals are to find interesting ways to visualize data and to discover subgroups among the variables and observations. We discussed two methods during the analysis:
 - **principal component analysis (PCA)**
 - **clustering**
 
-## Principal Component Analysis
+### Principal Component Analysis
 
 Used for data visualization or data pre-processing, the PCA is a technique which gives us a low dimensional representation of the dataset, exploiting covariance matrix of the starting dataset. The aim is to find a sequence of combination of variables that have maximal variance and are uncorrelated. For this reason, the process id developed sequentially.
 First, it's needed to find the *first principal component* of a set of features: this is that normalized linear combination of features which has the largest variance, where the sum of squared coefficients is equal to 1 and the set of the coefficients is called the *principal component loading vector*. Then, the first principal component is computed starting from this vector, using singular value decomposition and with the aim to get as much variance as possible. In other words, we want to identify the direction among the feature space where the data vary the most and that is more relevant to explain how data are spread in the our space. The PCA is useful for visualization because we can project data along this dimension to understand a good part of data distribution.
 The representation can be done in two dimensions: for this reason, it's relevant do determine the *second principal component*. This is that linear combination of features that has the largest variance and, at the same time, is uncorrelated with the first principal component. Given this last assumption, second component turns out to lay on the orthognal direction of the first component and this is a great feature to visualize the data in a two dimensional space. Principal components can be more than two but not more the number of observations minus one or number of features and all of them need to be orthogonal to the previous component. 
 Principal components are also used to get portion of the total variance present in a dataset and this is the rule used to select the best number of principal components. The idea is to add them to the dataset as new variables until the next one improves significantly the explained variance of our observations. A general rule is based on the use of the singular values associated with each component, which recommends to add components until they have values greater than a threshold, usually 1, because it would mean they are able to explain the spread of the data as much as more than one variable of the original dataset.
 
-## Clustering
+### Clustering
 
 The aim of the clustering is different respect to PCA: here, we want to detect if subgroups or clusters are present in the dataset, seeking a data partition such that observations within the same group are *similar*. The concept of similarity becomes central with clustering and it depends on type of variables, which need to be numeric, and on the type of distance we are considering (usually Euclidean, but there are a lot of types: City-Block, Minkowski,..).
 The algorithms can be several, but there is a main difference between two groups:
@@ -1177,7 +1174,16 @@ With regard to the distance-type problem, if the euclidean one is used, we need 
 - **average linkage**, computing the mean of the inter-cluster dissimilarities.
 - **single linkage**, where the minimal inter-cluster dissimilarity is considered,recording the smallest among all the pairwise dissimilarities between observations of different groups.
 - **centroid linkage**, where dissimilarity between centroids of cluster A and cluster B is considered.
-There isn't a univoque best method to determine the best number of cluster.
+
+At the same time, there is a ig variety of dissimilarities' measures which we can use, depending on the type of data, ordinal or numeric. Here are reported a few examples:
+- **Gower index**, which takes value for the each quantitative variable equal to *1 - |x(is) - x(js)|/K(s)*  where *|x(is) - x(js)| is the difference between the values of two observations respect to the variable and K(s) is the range within the variable value can vary.* In the case of qualitative variables, the Gower index takes value 1 if two observations have same mode for each feature, otherwise 0. In case of only binary variables, this index is equal to *Jaccard index*.
+- **Jaccard index**, for qualitative variables, it excludes the co-absence of the features.
+- **Russel Rao index**, equal to the ratio between number of co-presence and the number of binary variables.
+- **Sochal-Mikener index**, equal to the ratio between the sum of co-absence and co-presence and total number of binary variables.
+
+In general, there isn't a univoque best method to determine the best number of cluster. It's possible to use multiple methods to detect potential clusters and a good way to work is to repeat the analysis with appropriate different dissimilarities index and linkage types to check the robustness of the results. 
+
+
 
 # Conclusions 
 
