@@ -1,6 +1,6 @@
 ---
 title: "Statistical Learning Project"
-author: "Above the norm - Bassini, Cardarello, Ciarrocchi, Cutrera, Maroni, Rossi"
+author: "Above the norm - Cardarello, Ciarrocchi, Cutrera, Fusar Bassini, Maroni, Rossi"
 date: "5/21/2021"
 output:
   html_document:
