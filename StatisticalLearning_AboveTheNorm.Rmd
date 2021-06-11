@@ -244,7 +244,7 @@ In the following density plots we can see the improvement after applying the log
 
 <br/>
 
-```{r, out.width="80%", fig.align="center"}
+```{r, fig.align="center", out.width='60%', out.height='45%'}
 d1 <- dataset %>%
   ggplot(aes(x=ln_aqi)) +
   geom_density(fill="orangered3", color=FALSE, alpha=0.5)+
@@ -394,7 +394,7 @@ dt_test_labels <- dt[-train, 18]
 ```
 
 
-```{r}
+```{r, message=FALSE, out.width="60%", fig.align="center"}
 library(Metrics)
 full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt[train,])
 ols_plot_resid_fit(full.model)
@@ -403,7 +403,7 @@ ols_plot_resid_hist(full.model)
 
 And making the predictions on our unaccessed test set, we can see the plot actual versus predicted values on the test set, to see whether they are far from being in the straight line of zero errors:
 
-```{r}
+```{r, message=FALSE, out.width="60%", fig.align="center"}
 pred_ols <- predict(full.model, dt[-train,])
 ggplot(dt_test, aes(x=pred_ols, y=dt_test_labels)) + 
   geom_point() +
@@ -412,7 +412,7 @@ ggplot(dt_test, aes(x=pred_ols, y=dt_test_labels)) +
 ```
 
 ## Model Selection - LASSO
-```{r}
+```{r, message=FALSE, out.width="60%", fig.align="center"}
 library(glmnet)
 
 x=model.matrix(ln_aqi~., dt)[,-1]
@@ -431,7 +431,7 @@ coef(cv.lasso)
 
 We use our earlier train/validation division to select the lambda for the lasso.
 
-```{r}
+```{r, message=FALSE, out.width="60%", fig.align="center"}
 lasso.tr=glmnet(x[train,],y[train], standardize = FALSE)
 lasso.tr
 
@@ -492,7 +492,7 @@ regfit.fwd=regsubsets(ln_aqi~.,data=dt,method="forward", nvmax=10)
 summary(regfit.fwd)
 ```
 
-```{r, message = FALSE}
+```{r, message=FALSE, out.width="60%", fig.align="center"}
 reg.summary<-summary(regfit.fwd)
 plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC",types="l")
 ```
@@ -523,7 +523,7 @@ We started including all the variables in our analysis since we want the tree to
 In the plot below there is a graphical representation of the procedure of how the tree split the data. 
 This tree has a misclassification error rate of approximately 18%.
 
-```{r, message = FALSE}
+```{r, message=FALSE, out.width="60%", fig.align="center"}
 library(dplyr)
 data$cl <- cut(data$aqi, breaks = c(50,100,150,200),
                labels = c('yellow', 'orange', 'red'))
@@ -567,7 +567,7 @@ We wanted to improve the performance of our classification task and we decided t
 
 Reducing the number of variables lead us to get a slightly lower misclassification error rate of 16%. 
 Below you can find the plot of the tree. 
-```{r, message = FALSE}
+```{r, message=FALSE, out.width="60%", fig.align="center"}
 #TREE with relevant variables
 tree = tree(polluted~pop_rural + manufacturing + precipitations 
             + n_factories, dt)
