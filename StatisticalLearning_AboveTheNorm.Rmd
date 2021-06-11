@@ -1206,7 +1206,7 @@ with an admissible p-value. These are: precipitation and the number of factories
 Finally, we computed a KNN algorithm to predict the AQI, based on all the variables and the three categories aforementioned, obtaining an 85% accuracy with only two misclassification.
 The subselection of variables most relevant to this model drops to three, the number of factories gets dropped, but the others are the same as above.
 
-*aggiungere le conclusioni sulla parte unsupervised*
+The unsupervised analysis purpose was twofold: explore the data through visualization and check if more polluted States are similar in other characteristics. Through PCA we found a way to describe the data using a strong principal compoment and other smaller ones. The representation highlighted the presence of well defined outliers. Despite clustering subdivided the States into three groups, but we could not find any significant correlation between the categories in which we split the data before (yellow, orange and red) and the unsupervised learning clusters.
 
 The conclusion is that in the US, contrarily from a lot of statements circulated through the media,
 which suggested that lockdowns had a positive influence on the air quality, the relation between these two element is poor.
