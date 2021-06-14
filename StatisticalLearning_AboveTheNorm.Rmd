@@ -3,10 +3,10 @@ title: "Statistical Learning Project"
 author: "Above the norm - Cardarello, Ciarrocchi, Cutrera, Fusar Bassini, Maroni, Rossi"
 date: "5/21/2021"
 output:
-  pdf_document:
-    latex_engine: xelatex
   html_document:
     df_print: paged
+  pdf_document:
+    latex_engine: xelatex
 abstract: Environmental protection nowadays is a more and more important issue on which countries are investing many resources. What we are interested in is to discover the most relevant factors which affect pollution in US and to find a way to classify each State in the United States as polluted or not on a bunch of explanatory variables we thought could be relevant. Therefore, we let the data tell us how we can explain pollution in the United States. In the second part we try also to make an exploratory analysis of our dataset finding the principal components which are more relevant, and at least some hidden ways in which countries can be grouped through a hierarchical clustering.
 ---
 
@@ -23,7 +23,7 @@ data$ln_aqi <- log_aqi
 
 # Data and Problem Understanding
 
-The starting point of our research question was the effect of the lockdown we experienced in 2020 on the environment. From media and social networks, we have always heard about the positive effects that the lockdowns spread all over the world had on our air quality. Then, we start considering the variable that explains the strictness of lockdown (lockdown yes = 1, lockdown no = 0, soft lockdown = 0.5) in relation with the air quality index. As you can notice from the graph below, the implementation of lockdown did not have any real effect on the air quality. Indeed, the distributions in the three boxplots are not statistically different: they have quite similar means and the distributions seem to be overlapping. 
+The starting point of our research question was the effect of the lockdown we experienced in 2020 on the environment. From media and social networks, we have always heard about the positive effects that the lockdowns spread all over the world had on our air quality. Then, we start considering the variable that explains the strictness of lockdown (lockdown yes = 1, lockdown no = 0, soft-lockdown = 0.5) in relation with the air quality index. As you can notice from the graph below, the implementation of lockdown did not have any real effect on the air quality. Indeed, the distributions in the three boxplots are not statistically different: they have quite similar means and the distributions seem to be overlapping. 
 
 ```{r include=FALSE}
 library(car)
@@ -38,7 +38,16 @@ library(olsrr)
 library(tidyverse)
 library(caret)
 library(Metrics)
+library(corrplot)
+library(glmnet)
 library(leaps)
+library(class)
+library(selectiveInference)
+library(RCurl)
+library(tree)
+library(ISLR)
+library(plot3D)
+library(sjPlot)
 ```
 
 
@@ -69,7 +78,7 @@ Then, we computed the OLS with the remaining variables and we looked for normali
 We went on performing a model selection in order to find the most relevant regressors among the others.
 Given that our number of predictors (17) is not higher than the number of observations (51) we could not perform the backward stepwise model selection; then we decided to implement the forward search in order to choose the "best" predictors for our dependent variable (air quality). 
 
-For the classification task, at first we decided to adopt the Nearest Neighbor algorithm (K-NN) which seemed to perform pretty well (accuracy = 81.25%). Then, we run the classification trees but it did not output results as good as the K-NN. Therefore, we tried to improve its performance implementing the random forest algorithm and we got an accuracy of 75% (but it is still not good as the one of K-NN)
+For the classification task, we decided to adopt the Nearest Neighbor algorithm (K-NN) which seemed to perform pretty well (accuracy = 81.25%). Then, we run the classification trees but it did not output results as good as the K-NN. Therefore, we tried to improve its performance implementing the random forest algorithm and we got an accuracy of 75% (but it is still not good as the one of K-NN).
 
 To sum up our main results we can say that there exist at least one model which describes relevant factors for distinguishing countries with good air quality from those which are more polluted. The relevant factors we found are: the share of rural population out of the total, the manufacturing contribution to GDP, the annual rainfalls and the density of the factories for each State (n° of factories / squared kilometers). 
 
@@ -128,9 +137,6 @@ We considered the percentage of the rural population out of the total as a measu
 The structure of our dataset, formed by 51 observations and 19 variables without missing values, is as follows:
 
 ```{r include=FALSE}
-library(ggplot2)
-library(dplyr)
-library(RCurl)
 x <- getURL("https://raw.githubusercontent.com/mathicard/Statistical-Learning-DSE/main/usa_final.csv")
 dataset <- read.csv(text = x)
 ```
@@ -208,7 +214,7 @@ ggboxplot(dataset, x = "polluted", y = "aqi", color = "polluted",
 
 <br/>
 
-Looking at the distribution plot it seems that AQI has a left-skewed Normal distribution. To be sure, we use the well-known Shapiro-Wilk test in order to test the null hypothesis of normality. Unfortunately it is rejected at 95% of confidence, so our variable needs to be transformed.
+Looking at the distribution plot it seems that AQI has a right-skewed Normal distribution. To be sure, we use the well-known Shapiro-Wilk test in order to test the null hypothesis of normality. Unfortunately it is rejected at 95% of confidence, so our variable needs to be transformed.
 
 <br/>
 
@@ -268,8 +274,6 @@ In the following correlation matrix we analyze the relationship between the vari
 <br/>
 
 ```{r, message=FALSE, out.width="60%", fig.align="center"}
-library(corrplot)
-
 data_corr <- dataset[,-c(1,20:23)]
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 M <- cor(data_corr)
@@ -386,7 +390,6 @@ dt_test_labels <- dt[-train, 18]
 
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
-library(Metrics)
 full.model <- lm(ln_aqi~.-waste-healthcare-construction-utilities-professional-retail-finance, data = dt[train,])
 ols_plot_resid_fit(full.model)
 ols_plot_resid_hist(full.model)
@@ -404,8 +407,6 @@ ggplot(dt_test, aes(x=pred_ols, y=dt_test_labels)) +
 
 ## Model Selection - LASSO
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
-library(glmnet)
-
 x=model.matrix(ln_aqi~., dt)[,-1]
 x = scale(x, TRUE, TRUE)
 y=dt$ln_aqi
@@ -424,10 +425,10 @@ We use our earlier train/validation division to select the lambda for the lasso.
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
 lasso.tr=glmnet(x[train,],y[train], standardize = FALSE)
-lasso.tr
+#lasso.tr
 
 pred=predict(lasso.tr,x[-train,])
-dim(pred)
+#dim(pred)
 
 rmse= sqrt(apply((y[-train]-pred)^2,2,mean))
 plot(log(lasso.tr$lambda),rmse,type="b",xlab="Log(lambda)")
@@ -448,8 +449,6 @@ It also adds information in the sub-selection. Manufacture and lockdown have les
 Next, we compute post-lasso inference to check the highest dependent variables on the sub-selection.
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
-library(selectiveInference)
-
 sigma = estimateSigma(x,y)$sigmahat
 
 beta = coef(lasso.tr, x=x, y=y, s=lam.best/51, exact = TRUE)[-1]
@@ -463,7 +462,7 @@ With the Lasso, the results are similar to the other models used, but the post-s
 reduces the variables just to the two before mentioned.
 
 
-```{r, include=FALSE}
+```{r, include=FALSE, message=FALSE, warning=FALSE}
 dt <- dt[,-c(13, 5, 2, 12, 9, 10, 4)]
 normalize <- function(x) {
   return ((x - min(x)) / (max(x) - min(x))) 
@@ -479,12 +478,12 @@ dt_test_labels <- dt[-train, 11]
 
 With the method of the forward search which starts from the null model, and step by step adds the most relevant variable (in the bunch of the remaining ones) included in the model with the lowest Residual Sum of Squares, or highest R^2. Plotting the cross-validated prediction error (with Bayes Information Criterion - BIC) we can find the parsimonious model which is performing best, because the BIC takes also into account the number of predictors which are included in our models (as a penalization term for the models with more variables). 
 
-```{r, message=FALSE, out.width="50%", fig.align="center"}
+```{r, message=FALSE, out.width="50%", fig.align="center", warning=FALSE}
 regfit.fwd=regsubsets(ln_aqi~.,data=dt,method="forward", nvmax=10)
 summary(regfit.fwd)
 ```
 
-```{r, message=FALSE, out.width="50%", fig.align="center"}
+```{r, message=FALSE, out.width="50%", fig.align="center", warning=FALSE}
 reg.summary<-summary(regfit.fwd)
 plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC",types="l")
 ```
@@ -509,14 +508,11 @@ At least our new model created with the forward search has a lower Mean Squared 
 
 In this section, we try to classify the 51 States according to the pollution of their air quality, that is, to predict the air quality category to which each State belongs in 2020.
 
-Therefore, we decided to apply the Tree classification algorithm. 
-
 We started including all the variables in our analysis since we want the tree to select the most important ones for classification. 
-In the plot below there is a graphical representation of the procedure of how the tree split the data. 
+In the plot below there is a graphical representation of the procedure of how the tree splits the data. 
 This tree has a misclassification error rate of approximately 18%.
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
-library(dplyr)
 data$cl <- cut(data$aqi, breaks = c(50,100,150,200),
                labels = c('yellow', 'orange', 'red'))
 dt <- dt[,-11]
@@ -535,9 +531,6 @@ summary(dt_train_labels)
 summary(dt_test_labels)
 
 ###############################################################################
-library(tree)
-library(ISLR)
-
 tree = tree(polluted~., dt)
 summary(tree)
 plot(tree)
@@ -557,8 +550,8 @@ accuracy(table(tree_pred, dt_test_labels))
 
 We wanted to improve the performance of our classification task and we decided to reduce the dimensionality of our dataset selecting only the most relevant variables that were chosen in the model selection section.
 
-Reducing the number of variables lead us to get a slightly lower misclassification error rate of 16%. 
-Below you can find the plot of the tree. 
+Reducing the number of variables lead us to get a slightly lower misclassification error rate of 16%. Below you can find the plot of the tree. 
+
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
 #TREE with relevant variables
 tree = tree(polluted~pop_rural + manufacturing + precipitations 
@@ -601,7 +594,7 @@ Even though we applied the random forest and we got better results, we were not 
 
 ## k-Nearest Neighbours
 
-In this section we apply the K-Nearest Neighbor supervised algorithm (KNN) with the aim of predicting the air quality category to which each State belongs, according to the AQI 2020. 
+In this section we apply the K-Nearest Neighbor supervised algorithm (KNN) with the aim of classifying the air quality category to which each State belongs, according to the AQI 2020. 
 
 In first place, as we have already done in the previous models, we normalize the variables in our dataset so that distances between variables with larger ranges will not be over-emphasized. Therefore, the values of all the features are in the range of 0 and 1.
 
@@ -641,7 +634,7 @@ dt_test <- dt_test[,-18]
 ```
 
 
-In order to assess the classification accuracy, we plot the relationship between the training and test error error rates as a function of the number of neighbors selected (K). As K increases, the method becomes less flexible. The training error rate consistently increases as the flexibility decreases. Both error rates declines at first, reaching a minimum rate at K=5, before increasing again when the method becomes more inflexible. Therefore, we chose K=5 as the best number of neighbors for KNN in our prediction. 
+In order to assess the classification accuracy, we plot the relationship between the training and test error error rates as a function of the number of neighbors selected (K). As the hyperparameter **K** increases, the method becomes less flexible. The training error rate consistently increases as the flexibility decreases. Both error rates declines at first, reaching a minimum rate at K=5, before increasing again when the method becomes more inflexible. Therefore, we chose K=5 as the best number of neighbors for KNN in our classification. 
 
 ```{r, message=FALSE, out.width="50%", fig.align="center", warning=FALSE}
 ##load the package class
@@ -675,7 +668,7 @@ legend("topright", legend=c("Training error","Test error"), col = c("blue","red"
 #which(error.test==min(error.test)) # k=5
 ```
 
-By setting K=5, we get a model with an accuracy of 85% with the misclassification of only two "orange" States (Arizona and Michigan) which are categorized as "yellow".
+By setting K = 5, we get a model with an accuracy of 85% with the misclassification of only two "orange" States (Arizona and Michigan) which are categorized as "yellow".
 
 ```{r, message=FALSE, out.width="50%", fig.align="center", warning=FALSE}
 
@@ -713,10 +706,7 @@ knnFit
 
 In spite of the presence of multicollinearity among our variables, as we saw in the previous section, the predictions should not been affected in the KNN modeling. Therefore, we decided to run this classification algorithm with only the four most relevant variables to predict AQI selected by the Forward Search that was already performed (*"manufacturing"*,*"pop_rural"*,*"precipitations"* and *"n_factories"*). However, the accuracy was a little bit improved, by choosing K=5 or K=9 the metric was almost 77% in both cases.
 
-
 ```{r, message=FALSE, out.width="50%", fig.align="center", warning=FALSE}
-
-library(class)
 error.train <- replicate(0,20)
 
 dt_train2 <- dt_train[,c("manufacturing","pop_rural","precipitations")]
@@ -767,16 +757,14 @@ dataset[dataset$state=="Michigan", 2] #114.11
 ```
 
 
-Finally, we keep the three most important variables (*"manufacturing"*,*"pop_rural"*,*"precipitations"*) and with K= 5 the accuracy obtained was 85%, equal to the largest value we saw in the KNN model performed with all the variables. In this case, the only two States that were misclassified are Michigan (114.1) and Oklahoma (102.1), both belonging to the "orange" category and which the model categorized as "yellow". 
+Finally, we keep the three most important variables (*"manufacturing"*,*"pop_rural"*,*"precipitations"*) and with K = 5 the accuracy obtained was 85%, equal to the largest value we saw in the KNN model performed with all the variables. In this case, the only two States that were misclassified are Michigan (114.1) and Oklahoma (102.1), both belonging to the "orange" category and which the model categorized as "yellow". 
 
 
-```{r, message=FALSE, out.width="50%", fig.align="center"}
+```{r, message=FALSE, out.width="70%", fig.align="center"}
 
 #Plot in 3 dimensional space
 
 #install.packages("plot3D")
-library(plot3D)
-
 colVar <- factor(dt$polluted)
 
 
@@ -809,9 +797,6 @@ We enrich the analysis performing two unsupervised learning methods. In particul
 
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
-library(plot3D)
-library(dplyr)
-library(sjPlot)
 #load dataset
 dataset <- read.csv('usa_final.csv', sep=',')
 #prepare dataset for both PCA and clustering
@@ -820,14 +805,14 @@ datanames <- dataset
 datanames$cl <- cut(datanames$aqi, breaks = c(50,100,150,200),
                    labels = c('yellow', 'orange', 'red'))
 datanames$cl <- as.factor(datanames$cl)
-dataset <- dataset[,2:19]
+dataset <- dataset[,3:19]
 dataset <- scale(dataset)
 ds<-dist(dataset)
 ```
 
 ### PCA
 
-PCA highlights the possibility to reduce the model to a much simple one. As our main goal is to explain the variance in the data within a small number of components, we proceed by extracting the correlation matrix from the dataset and then its eigenvalues. As the underlying table shows, there is a first principal component that explains over 64% of the variance. There are other three components deriving from an eigenvalue just above one.
+PCA highlights the possibility to reduce the model to a much simple one. As our main goal is to explain the variance in the data within a small number of components, we proceed by extracting the correlation matrix from the dataset and then its eigenvalues. As the underlying table shows, there is a first principal component that explains more than 66% of the variance. There are other two components deriving from an eigenvalue just above one.
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
 n <- nrow(dataset)
@@ -843,7 +828,7 @@ tab<-round(cbind(autoval,pvarsp*100,pvarspcum*100),3)
 colnames(tab)<-c("eigenval","%var","%cumvar")
 tab
 ```
-An easy way to select components is a scree plot. Since the table witnesses the presence of a first principal component followed by three other ones lying an order of magnitude below, we prefer to avoid the elbow rule and instead select every component above one. This choice allows us to end up with a model explaining 88% of the variance.
+An easy way to select components is a scree plot. Since the table witnesses the presence of a first principal component followed by two other ones lying an order of magnitude below, we prefer to avoid the elbow rule and instead select every component above one. This choice allows us to end up with a model explaining 84% of the variance.
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
 #scree diagram to select the components
@@ -851,45 +836,14 @@ plot(autoval,type="b",main="Scree Diagram", xlab="Number of Components", ylab="E
 abline(h=1,lwd=3,col="red")
 ```
 
-As mentioned before, PCA is a powerful tool for data visualization. In this case, there is a tradeoff between visualization and reliability of the model. On one hand, the forth component has a significant explanatory importance since the eigenvalue is above 1 and it moves the cumulative variance explained from 82% to 88%. On the other hand, it is slightly above the threshold and could be neglected without a significant loss. In order to have a higher explained variance one would select a four-dimensional model, while a lower-dimensionality fashion for plotting requires to have at most three components. We decide to split the analysis into two. The first one uses four components while the other focuses on visualization and elides the last component.
+As mentioned before, PCA is a powerful tool for data visualization. In this case, there is a tradeoff between visualization and reliability of the model. On one hand, the fourth component has a not significant explanatory importance since the eigenvalue is not above 1 and it moves the cumulative variance explained from 84% to 90%. On the other hand, it is slightly below the threshold and could be neglected without a significant loss. In order to have a higher explained variance one would select a four-dimensional model, while a lower-dimensionality fashion for plotting requires to have at most three components.
 
-
-#### Four components model
-
-The four component analysis is the most useful one to read loadings and thus understand how variables are explained by the principal components. First of all, we select the corresponding eigenvectors.
-
-```{r, message=FALSE, out.width="50%", fig.align="center"}
-eigen(rho)$vectors[,1:4]
-```
-
-We proceed generating the loadings for each component. As shown in the following table, the first principal component has a heavy role in explaining almost every variable, peaking at professional, utilities and waste. Small loadings in precipitation and number of factories are compensated by the ones respectively of component two and four. The most information about precipitation is retained in the fourth component: this will be a loss in the subsequent three components analysis. 
-
-```{r, message=FALSE, out.width="50%", fig.align="center"}
-#we investigate what is explained by the components
-comp<-round(cbind(
-  -eigen(rho)$vectors[,1]*sqrt(autoval[1]),
-  -eigen(rho)$vectors[,2]*sqrt(autoval[2]),
-  -eigen(rho)$vectors[,3]*sqrt(autoval[3]),
-  -eigen(rho)$vectors[,4]*sqrt(autoval[4])
-  ),3)
-rownames(comp)<-colnames(dataset)
-colnames(comp)<-c("comp1","comp2","comp3","comp4")
-communality<-comp[,1]^2+comp[,2]^2+comp[,3]^2+comp[,4]^2
-comp<-cbind(comp,communality)
-comp
-```
-
-The scores for each State in the four components are reported below. Noteworthy, California, a very polluted State, stand out as its far from every other one. The sign of the components varies according to each State therefore we cannot draw a global interpretation of them.
-
-```{r, message=FALSE, out.width="50%", fig.align="center"}
-#calculate the scores for the selected components
-score <- dataset%*%autovec[,1:4]
-round(score,3)
-```
 
 #### Three components analysis
 
-Since in this analysis PCA is used for description and visualization, we focus more on the three components analysis. We proceed in the same way as before and read the loadings.
+Since in this analysis PCA is used for description and visualization, we focus more on the three components analysis. The three component analysis is the most useful one to read loadings and thus understand how variables are explained by the principal components. First of all, we select the corresponding eigenvectors. 
+
+We proceed generating the loadings for each component. As shown in the following table, the first principal component has a heavy role in explaining almost every variable, peaking at waste, professional, and healthcare.
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
 #we investigate what is explained by the components
@@ -905,7 +859,7 @@ comp<-cbind(comp,communality)
 comp
 ```
 
-We then compute the scores for each State. In this case, we can interpret them as coordinates of points in a tridimensional space and plot them.
+The scores for each State in the three components are reported below. Noteworthy, California, a very polluted State, stand out as its far from every other one. The sign of the components varies according to each State therefore we cannot draw a global interpretation of them. In this case, we can interpret them as coordinates of points in a tridimensional space and plot them.
 
 ```{r, message=FALSE, out.width="50%", fig.align="center"}
 #calculate the scores for the selected components
@@ -915,7 +869,7 @@ round(score,3)
 
 We scale the scores and plot them.
 
-```{r, message=FALSE, out.width="50%", fig.align="center"}
+```{r, message=FALSE, out.width="80%", fig.align="center"}
 #score plot
 scorez<-round(cbind
               (-score[,1]/sqrt(autoval[1]),
@@ -937,39 +891,12 @@ text3D(x,y,z,labels = rownames(dataset),add = TRUE,
        adj = 0.5, font = 1)
 ```
 
-A further exploration of the data is possible by combining the previous plot with the initial variables loadings. Thanks to this, we can recognize similarities between States by visualizing them. 
-
-```{r, message=FALSE, out.width="50%", fig.align="center"}
-scatter3D(x, y, z, colvar = dataset[,1],
-          xlab = "comp1", ylab = "comp2", zlab = "comp3",
-          main = "PCA - 3 components",
-          bty = "g", ticktype = "detailed", d = 2,
-          theta = 60, phi = 20, col = gg.col(100),
-          clab = "aqi",
-          pch = 19, cex = 0.8)
-text3D(x,y,z,labels = rownames(dataset),add = TRUE,
-       cex = 0.5, col = gg.col(100),
-       adj = 0.5, font = 1)
-compz<-round(cbind
-              (-comp[,1]/sqrt(autoval[1]),
-                comp[,2]/sqrt(autoval[2]),
-                comp[,3]/sqrt(autoval[3])),2)
-x <- compz[,1]
-y <- compz[,2]
-z <- compz[,3]
-scatter3D(x,y,z,
-          col = "red",add = TRUE,
-          pch = 19, cex = 0.8)
-text3D(x,y,z,labels = row.names(comp),add = TRUE,
-       cex = 0.5, col = "red",
-       adj = 0.5, font = 1)
-```
 
 ### Clustering
 
-The main goal of clustering in this analysis is on one hand subdivide States in groups that share common features. On the other hand, it results useful also to discover peculiar States which tend to have marked different behaviours. This could be the hint for a further analysis. To add robustness to the analysis, we perform and compare different clustering methods. In particular, we compare the average linkage, the complete linkage and the Ward linkage methods by plotting the respective dendrogram.
+The main goal of clustering in this analysis is on one hand grouping States which share common features. On the other hand, it results useful also to discover peculiar States which tend to have marked different behaviours. This could be the hint for a further analysis. To add robustness to the analysis, we perform and compare different clustering methods. In particular, we compare the **average linkage**, the **complete linkage** and the **Ward linkage** methods by plotting the respective dendrogram.
 
-```{r, message=FALSE, out.width="50%", fig.align="center"}
+```{r, message=FALSE, out.width="90%", fig.align="center", out.extra='angle=90'}
 agglo <- function(hc){
   data.frame(row.names=paste0("Cluster",seq_along(hc$height)),
              height=hc$height,
