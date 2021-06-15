@@ -434,7 +434,7 @@ rmse= sqrt(apply((y[-train]-pred)^2,2,mean))
 plot(log(lasso.tr$lambda),rmse,type="b",xlab="Log(lambda)")
 
 lam.best=lasso.tr$lambda[order(rmse)[1]]
-lam.best
+
 ```
 
 The best lambda is smaller than rsme in the linear regression model.
