@@ -836,12 +836,12 @@ plot(autoval,type="b",main="Scree Diagram", xlab="Number of Components", ylab="E
 abline(h=1,lwd=3,col="red")
 ```
 
-As mentioned before, PCA is a powerful tool for data visualization. In this case, there is a tradeoff between visualization and reliability of the model. On one hand, the fourth component has a not significant explanatory importance since the eigenvalue is not above 1 and it moves the cumulative variance explained from 84% to 90%. On the other hand, it is slightly below the threshold and could be neglected without a significant loss. In order to have a higher explained variance one would select a four-dimensional model, while a lower-dimensionality fashion for plotting requires to have at most three components.
+As mentioned before, PCA is a powerful tool for data visualization. In this case, there is a tradeoff between visualization and reliability of the model. On one hand, the fourth component has slightly significant explanatory importance since the eigenvalue is just below 1 and it moves the cumulative variance explained from 84% to 90%. On the other hand, it is still below the threshold and could be neglected without a significant loss. In order to have a higher explained variance one would select a four-dimensional model, while a lower-dimensionality fashion for plotting requires to have at most three components.
 
 
 #### Three components analysis
 
-Since in this analysis PCA is used for description and visualization, we focus more on the three components analysis. The three component analysis is the most useful one to read loadings and thus understand how variables are explained by the principal components. First of all, we select the corresponding eigenvectors. 
+Since in this analysis PCA is used for description and visualization, we focus on a three components analysis. The three component analysis is the most useful one to read loadings and thus understand how variables are explained by the principal components. First of all, we select the corresponding eigenvectors. 
 
 We proceed generating the loadings for each component. As shown in the following table, the first principal component has a heavy role in explaining almost every variable, peaking at waste, professional, and healthcare.
 
