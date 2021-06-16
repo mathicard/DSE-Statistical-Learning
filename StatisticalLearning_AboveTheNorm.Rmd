@@ -805,6 +805,7 @@ datanames <- dataset
 datanames$cl <- cut(datanames$aqi, breaks = c(50,100,150,200),
                    labels = c('yellow', 'orange', 'red'))
 datanames$cl <- as.factor(datanames$cl)
+aqi_plot <- dataset[,2]
 dataset <- dataset[,3:19]
 dataset <- scale(dataset)
 ds<-dist(dataset)
@@ -879,7 +880,7 @@ x <- scorez[,1]
 y <- scorez[,2]
 z <- scorez[,3]
 #plots
-scatter3D(x, y, z, colvar = dataset[,1],
+scatter3D(x, y, z, colvar = aqi_plot,
           xlab = "comp1", ylab = "comp2", zlab = "comp3",
           main = "PCA - 3 components",
           bty = "g", ticktype = "detailed", d = 2,
